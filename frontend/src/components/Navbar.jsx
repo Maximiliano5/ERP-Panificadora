@@ -9,7 +9,7 @@ import {
   Inventory2 as InventoryIcon,
   SwapVert as MovimientosIcon,
   Menu as MenuIcon,
-  LocalBakery as BakeryIcon,
+  Storefront as BakeryIcon,
 } from '@mui/icons-material';
 import { useNavigate, useLocation } from 'react-router-dom';
 
