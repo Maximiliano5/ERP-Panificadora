@@ -23,4 +23,8 @@ public class Mercaderia {
 
     @Column(name = "precio_unitario", nullable = false, precision = 12, scale = 2)
     private BigDecimal precioUnitario;
+
+    @Builder.Default
+    @Column(nullable = false)
+    private boolean activo = true;
 }

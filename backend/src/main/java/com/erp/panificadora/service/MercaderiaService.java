@@ -42,19 +42,16 @@ public class MercaderiaService {
 
     @Transactional
     public void eliminar(Long id) {
-        findEntityById(id);
-        if (movimientoStockRepository.existsByMercaderiaId(id)) {
-            throw new IllegalArgumentException(
-                "No se puede eliminar la mercadería porque tiene movimientos de stock asociados.");
-        }
-        mercaderiaRepository.deleteById(id);
+        Mercaderia mercaderia = findEntityById(id);
+        mercaderia.setActivo(false);
+        mercaderiaRepository.save(mercaderia);
     }
 
     @Transactional(readOnly = true)
     public List<MercaderiaResponseDTO> listar(String nombre) {
         List<Mercaderia> mercaderias = (nombre != null && !nombre.isBlank())
-                ? mercaderiaRepository.findByNombreContainingIgnoreCase(nombre)
-                : mercaderiaRepository.findAll();
+                ? mercaderiaRepository.findByNombreContainingIgnoreCaseAndActivoTrue(nombre)
+                : mercaderiaRepository.findAllByActivoTrue();
         return mercaderias.stream()
                 .map(this::toResponseDTO)
                 .collect(Collectors.toList());
@@ -86,7 +83,7 @@ public class MercaderiaService {
     }
 
     private Mercaderia findEntityById(Long id) {
-        return mercaderiaRepository.findById(id)
+        return mercaderiaRepository.findByIdAndActivoTrue(id)
                 .orElseThrow(() -> new ResourceNotFoundException(
                         "Mercadería no encontrada con id: " + id));
     }
