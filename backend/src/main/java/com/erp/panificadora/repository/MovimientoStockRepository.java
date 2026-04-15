@@ -15,6 +15,8 @@ public interface MovimientoStockRepository extends JpaRepository<MovimientoStock
 
     List<MovimientoStock> findByMercaderiaIdOrderByFechaDesc(Long mercaderiaId);
 
+    boolean existsByMercaderiaId(Long mercaderiaId);
+
     List<MovimientoStock> findAllByOrderByFechaDesc();
 
     @Query("SELECT COALESCE(SUM(m.cantidad), 0) FROM MovimientoStock m " +

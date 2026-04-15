@@ -43,6 +43,10 @@ public class MercaderiaService {
     @Transactional
     public void eliminar(Long id) {
         findEntityById(id);
+        if (movimientoStockRepository.existsByMercaderiaId(id)) {
+            throw new IllegalArgumentException(
+                "No se puede eliminar la mercadería porque tiene movimientos de stock asociados.");
+        }
         mercaderiaRepository.deleteById(id);
     }
 
