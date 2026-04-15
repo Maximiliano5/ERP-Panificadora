@@ -1,17 +1,17 @@
 import React, { useState } from 'react';
 import {
-  AppBar, Toolbar, Typography, Button, Box,
+  AppBar, Toolbar, Button, Box,
   IconButton, Drawer, List, ListItem, ListItemButton,
-  ListItemIcon, ListItemText, useMediaQuery, useTheme,
+  ListItemIcon, ListItemText, useMediaQuery, useTheme, Divider,
 } from '@mui/material';
 import {
   Dashboard as DashboardIcon,
   Inventory2 as InventoryIcon,
   SwapVert as MovimientosIcon,
   Menu as MenuIcon,
-  Storefront as BakeryIcon,
 } from '@mui/icons-material';
 import { useNavigate, useLocation } from 'react-router-dom';
+import logo from '../assets/LogoROMA.jpg';
 
 const navItems = [
   { label: 'Dashboard', path: '/dashboard', icon: <DashboardIcon /> },
@@ -30,10 +30,23 @@ export default function Navbar() {
     <>
       <AppBar position="sticky" elevation={0} sx={{ borderBottom: '1px solid rgba(255,255,255,0.15)' }}>
         <Toolbar>
-          <BakeryIcon sx={{ mr: 1 }} />
-          <Typography variant="h6" sx={{ flexGrow: 1, fontWeight: 700, letterSpacing: 0.5 }}>
-            Panificadora ERP
-          </Typography>
+          <Box
+            onClick={() => navigate('/dashboard')}
+            sx={{
+              bgcolor: 'white',
+              borderRadius: 2,
+              px: 1.5,
+              py: 0.5,
+              mr: 2,
+              display: 'flex',
+              alignItems: 'center',
+              cursor: 'pointer',
+              flexShrink: 0,
+            }}
+          >
+            <img src={logo} alt="Roma Panificadora" style={{ height: 52 }} />
+          </Box>
+          <Box sx={{ flexGrow: 1 }} />
 
           {isMobile ? (
             <IconButton color="inherit" onClick={() => setDrawerOpen(true)}>
@@ -64,6 +77,10 @@ export default function Navbar() {
 
       <Drawer anchor="right" open={drawerOpen} onClose={() => setDrawerOpen(false)}>
         <Box sx={{ width: 240 }}>
+          <Box sx={{ display: 'flex', justifyContent: 'center', py: 2, bgcolor: 'primary.main' }}>
+            <img src={logo} alt="Roma Panificadora" style={{ height: 64, borderRadius: 8, background: 'white', padding: '4px 10px' }} />
+          </Box>
+          <Divider />
           <List>
             {navItems.map((item) => (
               <ListItem key={item.path} disablePadding>
