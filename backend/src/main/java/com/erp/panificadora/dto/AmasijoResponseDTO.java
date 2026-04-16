@@ -1,0 +1,22 @@
+package com.erp.panificadora.dto;
+
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
+
+import java.math.BigDecimal;
+import java.util.List;
+
+@Getter
+@Setter
+@NoArgsConstructor
+@AllArgsConstructor
+@Builder
+public class AmasijoResponseDTO {
+
+    private Long id;
+    private BigDecimal cantidadPanProducido;
+    private List<DetalleAmasijoResponseDTO> insumos;
+}

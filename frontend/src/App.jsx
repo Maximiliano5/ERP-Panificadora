@@ -7,6 +7,7 @@ import Navbar from './components/Navbar';
 import Dashboard from './pages/Dashboard';
 import MercaderiaPage from './pages/MercaderiaPage';
 import MovimientosPage from './pages/MovimientosPage';
+import ProduccionPage from './pages/ProduccionPage';
 
 function App() {
   return (
@@ -24,6 +25,7 @@ function App() {
             <Route path="/dashboard" element={<Dashboard />} />
             <Route path="/mercaderias" element={<MercaderiaPage />} />
             <Route path="/movimientos" element={<MovimientosPage />} />
+            <Route path="/produccion" element={<ProduccionPage />} />
           </Routes>
         </BrowserRouter>
       </SnackbarProvider>

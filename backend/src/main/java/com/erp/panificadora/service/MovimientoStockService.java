@@ -75,6 +75,32 @@ public class MovimientoStockService {
                 .collect(Collectors.toList());
     }
 
+    /**
+     * Registra un EGRESO generado por el módulo de Producción.
+     * Centraliza la validación de stock y la creación del movimiento,
+     * manteniendo la auditoría consistente con el resto del sistema.
+     */
+    @Transactional
+    public void registrarEgresoProduccion(Mercaderia mercaderia, BigDecimal cantidad, LocalDateTime fecha) {
+        BigDecimal stockActual = mercaderiaService.calcularStock(mercaderia.getId());
+        if (stockActual.compareTo(cantidad) < 0) {
+            throw new StockInsuficienteException(
+                    "Stock insuficiente para '" + mercaderia.getNombre() +
+                    "'. Stock actual: " + stockActual.stripTrailingZeros().toPlainString() +
+                    ", cantidad solicitada: " + cantidad.stripTrailingZeros().toPlainString());
+        }
+
+        MovimientoStock movimiento = MovimientoStock.builder()
+                .tipo(TipoMovimiento.EGRESO)
+                .mercaderia(mercaderia)
+                .cantidad(cantidad)
+                .fecha(fecha)
+                .motivo("Producción - Amasijo")
+                .build();
+
+        movimientoStockRepository.save(movimiento);
+    }
+
     private MovimientoStockResponseDTO toResponseDTO(MovimientoStock m) {
         return MovimientoStockResponseDTO.builder()
                 .id(m.getId())

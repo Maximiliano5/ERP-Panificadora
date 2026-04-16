@@ -8,6 +8,7 @@ import {
   Dashboard as DashboardIcon,
   Inventory2 as InventoryIcon,
   SwapVert as MovimientosIcon,
+  BakeryDining as ProduccionIcon,
   Menu as MenuIcon,
 } from '@mui/icons-material';
 import { useNavigate, useLocation } from 'react-router-dom';
@@ -17,6 +18,7 @@ const navItems = [
   { label: 'Dashboard', path: '/dashboard', icon: <DashboardIcon /> },
   { label: 'Mercaderías', path: '/mercaderias', icon: <InventoryIcon /> },
   { label: 'Movimientos', path: '/movimientos', icon: <MovimientosIcon /> },
+  { label: 'Producción', path: '/produccion', icon: <ProduccionIcon /> },
 ];
 
 export default function Navbar() {
