@@ -28,11 +28,13 @@ public class ProduccionService {
 
     @Transactional
     public ProduccionResponseDTO crear(ProduccionRequestDTO dto) {
-        Produccion produccion = Produccion.builder()
-                .fecha(dto.getFecha())
-                .observaciones(dto.getObservaciones())
-                .amasijos(new ArrayList<>())
-                .build();
+        // Si ya existe una producción para esa fecha, se reutiliza y se agregan los amasijos a la existente.
+        Produccion produccion = produccionRepository.findFirstByFechaOrderByIdAsc(dto.getFecha())
+                .orElseGet(() -> Produccion.builder()
+                        .fecha(dto.getFecha())
+                        .observaciones(dto.getObservaciones())
+                        .amasijos(new ArrayList<>())
+                        .build());
 
         for (AmasijoRequestDTO amasijoReq : dto.getAmasijos()) {
             Amasijo amasijo = Amasijo.builder()
