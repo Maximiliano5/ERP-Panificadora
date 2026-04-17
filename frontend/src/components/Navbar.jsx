@@ -8,17 +8,18 @@ import {
   Dashboard as DashboardIcon,
   Inventory2 as InventoryIcon,
   SwapVert as MovimientosIcon,
-  BakeryDining as ProduccionIcon,
   Menu as MenuIcon,
 } from '@mui/icons-material';
+import PanMoldeIcon from './PanMoldeIcon';
 import { useNavigate, useLocation } from 'react-router-dom';
 import logo from '../assets/LogoROMA.jpg';
+import panIcon from '../assets/pan.png';
 
 const navItems = [
   { label: 'Dashboard', path: '/dashboard', icon: <DashboardIcon /> },
   { label: 'Mercaderías', path: '/mercaderias', icon: <InventoryIcon /> },
   { label: 'Movimientos', path: '/movimientos', icon: <MovimientosIcon /> },
-  { label: 'Producción', path: '/produccion', icon: <ProduccionIcon /> },
+  { label: 'Producción', path: '/produccion', icon: <img src={panIcon} alt="Producción" style={{ width: 22, height: 22, objectFit: 'contain' }} /> },
 ];
 
 export default function Navbar() {

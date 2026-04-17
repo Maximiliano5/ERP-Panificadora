@@ -6,8 +6,8 @@ import {
 import {
   KeyboardArrowDown as ArrowDownIcon,
   KeyboardArrowUp as ArrowUpIcon,
-  BakeryDining as PanIcon,
 } from '@mui/icons-material';
+import panIcon from '../assets/pan.png';
 
 const formatDate = (dateStr) =>
   new Date(dateStr + 'T00:00:00').toLocaleDateString('es-AR', {
@@ -42,7 +42,7 @@ function FilaProduccion({ produccion }) {
         <TableCell align="center">
           {totalPanes > 0 ? (
             <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 0.5 }}>
-              <PanIcon fontSize="small" color="secondary" />
+              <img src={panIcon} alt="pan" style={{ width: 18, height: 18, objectFit: 'contain' }} />
               <Typography variant="body2" fontWeight={600}>
                 {formatQty(totalPanes)}
               </Typography>
