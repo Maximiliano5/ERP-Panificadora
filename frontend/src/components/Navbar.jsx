@@ -12,7 +12,7 @@ import {
 } from '@mui/icons-material';
 import PanMoldeIcon from './PanMoldeIcon';
 import { useNavigate, useLocation } from 'react-router-dom';
-import logo from '../assets/LogoROMA.jpg';
+import logo from '../assets/LogoRomaNegro.png';
 import panIcon from '../assets/pan.png';
 
 const navItems = [
@@ -47,7 +47,7 @@ export default function Navbar() {
               flexShrink: 0,
             }}
           >
-            <img src={logo} alt="Roma Panificadora" style={{ height: 52 }} />
+            <img src={logo} alt="Roma Panificadora" style={{ height: 70 }} />
           </Box>
           <Box sx={{ flexGrow: 1 }} />
 
@@ -81,7 +81,7 @@ export default function Navbar() {
       <Drawer anchor="right" open={drawerOpen} onClose={() => setDrawerOpen(false)}>
         <Box sx={{ width: 240 }}>
           <Box sx={{ display: 'flex', justifyContent: 'center', py: 2, bgcolor: 'primary.main' }}>
-            <img src={logo} alt="Roma Panificadora" style={{ height: 64, borderRadius: 8, background: 'white', padding: '4px 10px' }} />
+            <img src={logo} alt="Roma Panificadora" style={{ height: 80, borderRadius: 8, background: 'white', padding: '4px 10px' }} />
           </Box>
           <Divider />
           <List>
