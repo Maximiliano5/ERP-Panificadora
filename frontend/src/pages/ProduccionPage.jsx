@@ -89,7 +89,12 @@ export default function ProduccionPage() {
         {/* Tab 0: Historial */}
         {tab === 0 && (
           <Box sx={{ p: 2 }}>
-            <ProduccionList producciones={producciones} loading={loading} />
+            <ProduccionList
+              producciones={producciones}
+              loading={loading}
+              mercaderias={mercaderias}
+              onRefresh={fetchProducciones}
+            />
           </Box>
         )}
 

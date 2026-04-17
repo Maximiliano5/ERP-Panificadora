@@ -14,4 +14,8 @@ export const produccionService = {
 
   consumoPorMercaderia: (mercaderiaId) =>
     api.get(`${BASE}/consumo-mercaderia/${mercaderiaId}`).then((r) => r.data),
+
+  actualizarAmasijo: (id, data) => api.put(`/amasijos/${id}`, data).then((r) => r.data),
+
+  eliminarAmasijo: (id) => api.delete(`/amasijos/${id}`),
 };

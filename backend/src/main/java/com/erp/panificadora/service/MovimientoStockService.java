@@ -101,6 +101,23 @@ public class MovimientoStockService {
         movimientoStockRepository.save(movimiento);
     }
 
+    /**
+     * Registra un INGRESO compensatorio al anular o editar un amasijo.
+     * Revierte el EGRESO original manteniendo el historial de movimientos íntegro.
+     */
+    @Transactional
+    public void registrarIngresoAnulacion(Mercaderia mercaderia, BigDecimal cantidad, LocalDateTime fecha) {
+        MovimientoStock movimiento = MovimientoStock.builder()
+                .tipo(TipoMovimiento.INGRESO)
+                .mercaderia(mercaderia)
+                .cantidad(cantidad)
+                .fecha(fecha)
+                .observaciones("Anulación - Producción")
+                .build();
+
+        movimientoStockRepository.save(movimiento);
+    }
+
     private MovimientoStockResponseDTO toResponseDTO(MovimientoStock m) {
         return MovimientoStockResponseDTO.builder()
                 .id(m.getId())
