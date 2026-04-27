@@ -15,9 +15,11 @@ import {
   People as PeopleIcon,
   TrendingDown as DeudaIcon,
   TrendingUp as SaldoFavorIcon,
+  PersonSearch as PerfilIcon,
 } from '@mui/icons-material';
 import { clienteService } from '../services/clienteService';
 import { useSnackbar } from 'notistack';
+import { useNavigate } from 'react-router-dom';
 
 const formatPeso = (n) =>
   n != null
@@ -26,7 +28,7 @@ const formatPeso = (n) =>
 
 const TIPO_OPTIONS = ['CLIENTE', 'REVENDEDOR'];
 
-const EMPTY_FORM = { nombre: '', apellido: '', tipo: 'CLIENTE' };
+const EMPTY_FORM = { nombre: '', apellido: '', tipo: 'CLIENTE', direccion: '', precioMiga: '', precioRallado: '' };
 
 const SaldoChip = ({ saldo }) => {
   const val = Number(saldo);
@@ -47,6 +49,7 @@ const SaldoChip = ({ saldo }) => {
 
 export default function ClientesPage() {
   const { enqueueSnackbar } = useSnackbar();
+  const navigate = useNavigate();
   const [clientes, setClientes] = useState([]);
   const [resumen, setResumen] = useState(null);
   const [loading, setLoading] = useState(false);
@@ -96,7 +99,14 @@ export default function ClientesPage() {
 
   const openEdit = (cliente) => {
     setEditTarget(cliente);
-    setForm({ nombre: cliente.nombre, apellido: cliente.apellido, tipo: cliente.tipo });
+    setForm({
+      nombre: cliente.nombre,
+      apellido: cliente.apellido,
+      tipo: cliente.tipo,
+      direccion: cliente.direccion || '',
+      precioMiga: cliente.precioMiga ?? '',
+      precioRallado: cliente.precioRallado ?? '',
+    });
     setDialogOpen(true);
   };
 
@@ -106,12 +116,20 @@ export default function ClientesPage() {
       return;
     }
     setSaving(true);
+    const payload = {
+      nombre: form.nombre,
+      apellido: form.apellido,
+      tipo: form.tipo,
+      direccion: form.direccion || null,
+      precioMiga: form.precioMiga !== '' ? parseFloat(form.precioMiga) : null,
+      precioRallado: form.precioRallado !== '' ? parseFloat(form.precioRallado) : null,
+    };
     try {
       if (editTarget) {
-        await clienteService.actualizar(editTarget.id, form);
+        await clienteService.actualizar(editTarget.id, payload);
         enqueueSnackbar('Cliente actualizado', { variant: 'success' });
       } else {
-        await clienteService.crear(form);
+        await clienteService.crear(payload);
         enqueueSnackbar('Cliente creado', { variant: 'success' });
       }
       setDialogOpen(false);
@@ -281,6 +299,14 @@ export default function ClientesPage() {
                     <TableCell align="right">
                       <IconButton
                         size="small"
+                        title="Ver perfil"
+                        onClick={() => navigate(`/clientes/${c.id}`)}
+                        color="secondary"
+                      >
+                        <PerfilIcon fontSize="small" />
+                      </IconButton>
+                      <IconButton
+                        size="small"
                         title="Ajustar saldo"
                         onClick={() => openSaldo(c)}
                         color="primary"
@@ -340,6 +366,33 @@ export default function ClientesPage() {
               ))}
             </Select>
           </FormControl>
+          <TextField
+            label="Dirección del local (opcional)"
+            value={form.direccion}
+            onChange={(e) => setForm({ ...form, direccion: e.target.value })}
+            size="small"
+            fullWidth
+          />
+          <TextField
+            label="Precio fijo miga (opcional)"
+            type="number"
+            value={form.precioMiga}
+            onChange={(e) => setForm({ ...form, precioMiga: e.target.value })}
+            size="small"
+            fullWidth
+            InputProps={{ startAdornment: <InputAdornment position="start">$</InputAdornment> }}
+            inputProps={{ min: 0.01, step: 0.01 }}
+          />
+          <TextField
+            label="Precio fijo rallado / kg (opcional)"
+            type="number"
+            value={form.precioRallado}
+            onChange={(e) => setForm({ ...form, precioRallado: e.target.value })}
+            size="small"
+            fullWidth
+            InputProps={{ startAdornment: <InputAdornment position="start">$</InputAdornment> }}
+            inputProps={{ min: 0.01, step: 0.01 }}
+          />
         </DialogContent>
         <DialogActions>
           <Button onClick={() => setDialogOpen(false)}>Cancelar</Button>

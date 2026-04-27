@@ -4,10 +4,12 @@ import com.erp.panificadora.dto.*;
 import com.erp.panificadora.service.ClienteService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.time.LocalDate;
 import java.util.List;
 
 @RestController
@@ -63,5 +65,13 @@ public class ClienteController {
     public ResponseEntity<ClienteResponseDTO> actualizarSaldo(
             @PathVariable Long id, @Valid @RequestBody SaldoUpdateDTO dto) {
         return ResponseEntity.ok(clienteService.actualizarSaldo(id, dto));
+    }
+
+    @GetMapping("/{id}/perfil")
+    public ResponseEntity<ClientePerfilResponseDTO> perfil(
+            @PathVariable Long id,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate desde,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate hasta) {
+        return ResponseEntity.ok(clienteService.obtenerPerfil(id, desde, hasta));
     }
 }

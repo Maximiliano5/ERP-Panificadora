@@ -10,6 +10,7 @@ import MovimientosPage from './pages/MovimientosPage';
 import ProduccionPage from './pages/ProduccionPage';
 import CostoProduccionPage from './pages/CostoProduccionPage';
 import ClientesPage from './pages/ClientesPage';
+import ClientePerfilPage from './pages/ClientePerfilPage';
 import VentasPage from './pages/VentasPage';
 
 function App() {
@@ -31,6 +32,7 @@ function App() {
             <Route path="/produccion" element={<ProduccionPage />} />
             <Route path="/costos-produccion" element={<CostoProduccionPage />} />
             <Route path="/clientes" element={<ClientesPage />} />
+            <Route path="/clientes/:id" element={<ClientePerfilPage />} />
             <Route path="/ventas" element={<VentasPage />} />
           </Routes>
         </BrowserRouter>

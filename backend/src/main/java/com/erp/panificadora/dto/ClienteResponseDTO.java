@@ -19,5 +19,8 @@ public class ClienteResponseDTO {
     private String nombre;
     private String apellido;
     private String tipo;
+    private String direccion;
+    private BigDecimal precioMiga;
+    private BigDecimal precioRallado;
     private BigDecimal saldo;
 }

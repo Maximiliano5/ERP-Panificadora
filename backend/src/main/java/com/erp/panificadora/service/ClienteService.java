@@ -3,12 +3,17 @@ package com.erp.panificadora.service;
 import com.erp.panificadora.dto.*;
 import com.erp.panificadora.exception.ResourceNotFoundException;
 import com.erp.panificadora.model.Cliente;
+import com.erp.panificadora.model.VentaMiga;
+import com.erp.panificadora.model.VentaPanRallado;
 import com.erp.panificadora.repository.ClienteRepository;
+import com.erp.panificadora.repository.VentaMigaRepository;
+import com.erp.panificadora.repository.VentaRalladoRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
+import java.time.LocalDate;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -17,6 +22,8 @@ import java.util.stream.Collectors;
 public class ClienteService {
 
     private final ClienteRepository clienteRepository;
+    private final VentaMigaRepository ventaMigaRepository;
+    private final VentaRalladoRepository ventaRalladoRepository;
 
     @Transactional
     public ClienteResponseDTO crear(ClienteRequestDTO dto) {
@@ -24,6 +31,9 @@ public class ClienteService {
                 .nombre(dto.getNombre())
                 .apellido(dto.getApellido())
                 .tipo(dto.getTipo())
+                .direccion(dto.getDireccion())
+                .precioMiga(dto.getPrecioMiga())
+                .precioRallado(dto.getPrecioRallado())
                 .build();
         return toResponseDTO(clienteRepository.save(cliente));
     }
@@ -34,6 +44,9 @@ public class ClienteService {
         cliente.setNombre(dto.getNombre());
         cliente.setApellido(dto.getApellido());
         cliente.setTipo(dto.getTipo());
+        cliente.setDireccion(dto.getDireccion());
+        cliente.setPrecioMiga(dto.getPrecioMiga());
+        cliente.setPrecioRallado(dto.getPrecioRallado());
         return toResponseDTO(clienteRepository.save(cliente));
     }
 
@@ -85,6 +98,38 @@ public class ClienteService {
                 .build();
     }
 
+    @Transactional(readOnly = true)
+    public ClientePerfilResponseDTO obtenerPerfil(Long id, LocalDate desde, LocalDate hasta) {
+        Cliente cliente = findActivo(id);
+
+        List<VentaMiga> ventasMiga = (desde != null && hasta != null)
+                ? ventaMigaRepository.findByClienteIdAndFechaBetweenOrderByFechaDesc(id, desde, hasta)
+                : ventaMigaRepository.findByClienteIdOrderByFechaDesc(id);
+
+        List<VentaPanRallado> ventasRallado = (desde != null && hasta != null)
+                ? ventaRalladoRepository.findByClienteIdAndFechaBetweenOrderByFechaDesc(id, desde, hasta)
+                : ventaRalladoRepository.findByClienteIdOrderByFechaDesc(id);
+
+        BigDecimal totalPanesMiga = ventasMiga.stream()
+                .map(VentaMiga::getCantidad).reduce(BigDecimal.ZERO, BigDecimal::add);
+        BigDecimal totalKgRallado = ventasRallado.stream()
+                .map(VentaPanRallado::getPeso).reduce(BigDecimal.ZERO, BigDecimal::add);
+        BigDecimal totalFacturadoMiga = ventasMiga.stream()
+                .map(VentaMiga::getTotal).reduce(BigDecimal.ZERO, BigDecimal::add);
+        BigDecimal totalFacturadoRallado = ventasRallado.stream()
+                .map(VentaPanRallado::getTotal).reduce(BigDecimal.ZERO, BigDecimal::add);
+
+        return ClientePerfilResponseDTO.builder()
+                .cliente(toResponseDTO(cliente))
+                .totalPanesMiga(totalPanesMiga)
+                .totalKgRallado(totalKgRallado)
+                .totalFacturadoMiga(totalFacturadoMiga)
+                .totalFacturadoRallado(totalFacturadoRallado)
+                .ventasMiga(ventasMiga.stream().map(this::toVentaMigaDTO).collect(Collectors.toList()))
+                .ventasRallado(ventasRallado.stream().map(this::toVentaRalladoDTO).collect(Collectors.toList()))
+                .build();
+    }
+
     private Cliente findActivo(Long id) {
         return clienteRepository.findByIdAndActivoTrue(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Cliente no encontrado con id: " + id));
@@ -96,7 +141,38 @@ public class ClienteService {
                 .nombre(c.getNombre())
                 .apellido(c.getApellido())
                 .tipo(c.getTipo().name())
+                .direccion(c.getDireccion())
+                .precioMiga(c.getPrecioMiga())
+                .precioRallado(c.getPrecioRallado())
                 .saldo(c.getSaldo())
+                .build();
+    }
+
+    private VentaMigaResponseDTO toVentaMigaDTO(VentaMiga v) {
+        return VentaMigaResponseDTO.builder()
+                .id(v.getId())
+                .fecha(v.getFecha())
+                .clienteId(v.getCliente().getId())
+                .clienteNombre(v.getCliente().getNombre() + " " + v.getCliente().getApellido())
+                .tipoPan(v.getTipoPan().name())
+                .cantidad(v.getCantidad())
+                .unidad(v.getUnidad().name())
+                .precioUnitario(v.getPrecioUnitario())
+                .total(v.getTotal())
+                .pagado(v.isPagado())
+                .build();
+    }
+
+    private VentaRalladoResponseDTO toVentaRalladoDTO(VentaPanRallado v) {
+        return VentaRalladoResponseDTO.builder()
+                .id(v.getId())
+                .fecha(v.getFecha())
+                .clienteId(v.getCliente().getId())
+                .clienteNombre(v.getCliente().getNombre() + " " + v.getCliente().getApellido())
+                .peso(v.getPeso())
+                .precioPorKg(v.getPrecioPorKg())
+                .total(v.getTotal())
+                .pagado(v.isPagado())
                 .build();
     }
 }

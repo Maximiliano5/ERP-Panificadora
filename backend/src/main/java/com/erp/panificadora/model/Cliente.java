@@ -28,6 +28,15 @@ public class Cliente {
     @Column(nullable = false)
     private TipoCliente tipo;
 
+    @Column
+    private String direccion;
+
+    @Column(name = "precio_miga", precision = 12, scale = 2)
+    private BigDecimal precioMiga;
+
+    @Column(name = "precio_rallado", precision = 12, scale = 2)
+    private BigDecimal precioRallado;
+
     @Builder.Default
     @Column(nullable = false, precision = 14, scale = 2)
     private BigDecimal saldo = BigDecimal.ZERO;
