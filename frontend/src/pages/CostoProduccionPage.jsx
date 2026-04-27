@@ -218,13 +218,12 @@ export default function CostoProduccionPage() {
                     </FormControl>
                     <TextField
                       size="small"
-                      label="Cantidad"
+                      label="Cant. (uds)"
                       type="number"
                       value={insumo.cantidad}
                       onChange={(e) => updateInsumo(i, 'cantidad', e.target.value)}
-                      sx={{ width: 100 }}
+                      sx={{ width: 110 }}
                       inputProps={{ min: 1, step: 1 }}
-                      helperText="unidades"
                     />
                     <TextField
                       size="small"
