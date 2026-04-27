@@ -3,9 +3,11 @@ package com.erp.panificadora.service;
 import com.erp.panificadora.dto.*;
 import com.erp.panificadora.exception.ResourceNotFoundException;
 import com.erp.panificadora.model.Cliente;
+import com.erp.panificadora.model.PagoCliente;
 import com.erp.panificadora.model.VentaMiga;
 import com.erp.panificadora.model.VentaPanRallado;
 import com.erp.panificadora.repository.ClienteRepository;
+import com.erp.panificadora.repository.PagoClienteRepository;
 import com.erp.panificadora.repository.VentaMigaRepository;
 import com.erp.panificadora.repository.VentaRalladoRepository;
 import lombok.RequiredArgsConstructor;
@@ -24,6 +26,7 @@ public class ClienteService {
     private final ClienteRepository clienteRepository;
     private final VentaMigaRepository ventaMigaRepository;
     private final VentaRalladoRepository ventaRalladoRepository;
+    private final PagoClienteRepository pagoClienteRepository;
 
     @Transactional
     public ClienteResponseDTO crear(ClienteRequestDTO dto) {
@@ -119,6 +122,10 @@ public class ClienteService {
         BigDecimal totalFacturadoRallado = ventasRallado.stream()
                 .map(VentaPanRallado::getTotal).reduce(BigDecimal.ZERO, BigDecimal::add);
 
+        List<PagoClienteResponseDTO> pagos = pagoClienteRepository
+                .findByClienteIdOrderByFechaDesc(id)
+                .stream().map(this::toPagoDTO).collect(Collectors.toList());
+
         return ClientePerfilResponseDTO.builder()
                 .cliente(toResponseDTO(cliente))
                 .totalPanesMiga(totalPanesMiga)
@@ -127,7 +134,32 @@ public class ClienteService {
                 .totalFacturadoRallado(totalFacturadoRallado)
                 .ventasMiga(ventasMiga.stream().map(this::toVentaMigaDTO).collect(Collectors.toList()))
                 .ventasRallado(ventasRallado.stream().map(this::toVentaRalladoDTO).collect(Collectors.toList()))
+                .pagos(pagos)
                 .build();
+    }
+
+    @Transactional
+    public PagoClienteResponseDTO registrarPago(Long clienteId, PagoClienteRequestDTO dto) {
+        Cliente cliente = findActivo(clienteId);
+
+        PagoCliente pago = PagoCliente.builder()
+                .cliente(cliente)
+                .fecha(dto.getFecha() != null ? dto.getFecha() : java.time.LocalDate.now())
+                .monto(dto.getMonto())
+                .descripcion(dto.getDescripcion())
+                .build();
+
+        cliente.setSaldo(cliente.getSaldo().add(dto.getMonto()));
+        clienteRepository.save(cliente);
+
+        return toPagoDTO(pagoClienteRepository.save(pago));
+    }
+
+    @Transactional(readOnly = true)
+    public List<PagoClienteResponseDTO> listarPagos(Long clienteId) {
+        findActivo(clienteId);
+        return pagoClienteRepository.findByClienteIdOrderByFechaDesc(clienteId)
+                .stream().map(this::toPagoDTO).collect(Collectors.toList());
     }
 
     private Cliente findActivo(Long id) {
@@ -160,6 +192,16 @@ public class ClienteService {
                 .precioUnitario(v.getPrecioUnitario())
                 .total(v.getTotal())
                 .pagado(v.isPagado())
+                .build();
+    }
+
+    private PagoClienteResponseDTO toPagoDTO(PagoCliente p) {
+        return PagoClienteResponseDTO.builder()
+                .id(p.getId())
+                .clienteId(p.getCliente().getId())
+                .fecha(p.getFecha())
+                .monto(p.getMonto())
+                .descripcion(p.getDescripcion())
                 .build();
     }
 

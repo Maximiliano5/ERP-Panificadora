@@ -13,6 +13,8 @@ export const clienteService = {
   eliminar: (id) => api.delete(`${BASE}/${id}`),
   actualizarSaldo: (id, nuevoSaldo) =>
     api.post(`${BASE}/${id}/saldo`, { nuevoSaldo }).then((r) => r.data),
+  registrarPago: (id, data) => api.post(`${BASE}/${id}/pagos`, data).then((r) => r.data),
+  listarPagos: (id) => api.get(`${BASE}/${id}/pagos`).then((r) => r.data),
   obtenerPerfil: (id, desde, hasta) => {
     const params = {};
     if (desde) params.desde = desde;

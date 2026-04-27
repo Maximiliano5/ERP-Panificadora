@@ -11,6 +11,8 @@ import {
   LocationOn as DireccionIcon,
   Receipt as MigaIcon,
   Grain as RalladoIcon,
+  Add as AddIcon,
+  Payments as PagosIcon,
 } from '@mui/icons-material';
 import { useParams, useNavigate } from 'react-router-dom';
 import { clienteService } from '../services/clienteService';
@@ -21,8 +23,11 @@ const formatPeso = (n) =>
     ? `$${Number(n).toLocaleString('es-AR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
     : '-';
 
-const formatNum = (n, dec = 2) =>
-  n != null ? Number(n).toLocaleString('es-AR', { minimumFractionDigits: dec, maximumFractionDigits: dec }) : '-';
+const formatCant = (n) =>
+  n != null ? Number(n).toLocaleString('es-AR', { maximumFractionDigits: 3 }) : '-';
+
+const formatKg = (n) =>
+  n != null ? Number(n).toLocaleString('es-AR', { maximumFractionDigits: 3 }) : '-';
 
 const PagoChip = ({ pagado }) =>
   pagado ? (
@@ -44,6 +49,8 @@ const firstOfMonth = () => {
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-01`;
 };
 
+const EMPTY_PAGO = { fecha: today(), monto: '', descripcion: '' };
+
 export default function ClientePerfilPage() {
   const { id } = useParams();
   const navigate = useNavigate();
@@ -53,6 +60,9 @@ export default function ClientePerfilPage() {
   const [loading, setLoading] = useState(false);
   const [desde, setDesde] = useState('');
   const [hasta, setHasta] = useState('');
+
+  const [formPago, setFormPago] = useState(EMPTY_PAGO);
+  const [savingPago, setSavingPago] = useState(false);
 
   const fetchPerfil = useCallback(
     async (d, h) => {
@@ -74,26 +84,30 @@ export default function ClientePerfilPage() {
   }, [fetchPerfil]);
 
   const handleFiltrar = () => fetchPerfil(desde, hasta);
+  const setRangoHoy = () => { const d = today(); setDesde(d); setHasta(d); fetchPerfil(d, d); };
+  const setRangoMes = () => { const d = firstOfMonth(), h = today(); setDesde(d); setHasta(h); fetchPerfil(d, h); };
+  const limpiarFiltro = () => { setDesde(''); setHasta(''); fetchPerfil('', ''); };
 
-  const setRangoHoy = () => {
-    const d = today();
-    setDesde(d);
-    setHasta(d);
-    fetchPerfil(d, d);
-  };
-
-  const setRangoMes = () => {
-    const d = firstOfMonth();
-    const h = today();
-    setDesde(d);
-    setHasta(h);
-    fetchPerfil(d, h);
-  };
-
-  const limpiarFiltro = () => {
-    setDesde('');
-    setHasta('');
-    fetchPerfil('', '');
+  const handleRegistrarPago = async () => {
+    if (!formPago.monto || parseFloat(formPago.monto) <= 0) {
+      enqueueSnackbar('Ingresá un monto válido', { variant: 'warning' });
+      return;
+    }
+    setSavingPago(true);
+    try {
+      await clienteService.registrarPago(id, {
+        fecha: formPago.fecha || null,
+        monto: parseFloat(formPago.monto),
+        descripcion: formPago.descripcion || null,
+      });
+      enqueueSnackbar('Pago registrado', { variant: 'success' });
+      setFormPago(EMPTY_PAGO);
+      fetchPerfil(desde, hasta);
+    } catch (e) {
+      enqueueSnackbar(e.message || 'Error al registrar pago', { variant: 'error' });
+    } finally {
+      setSavingPago(false);
+    }
   };
 
   if (loading && !perfil) {
@@ -107,6 +121,7 @@ export default function ClientePerfilPage() {
   if (!perfil) return null;
 
   const { cliente } = perfil;
+  const totalPagos = (perfil.pagos || []).reduce((s, p) => s + Number(p.monto), 0);
 
   return (
     <Container maxWidth="lg" sx={{ py: 4 }}>
@@ -133,24 +148,15 @@ export default function ClientePerfilPage() {
       <Grid container spacing={2} sx={{ mb: 3 }}>
         <Grid item xs={12} md={4}>
           <Paper variant="outlined" sx={{ p: 2.5, height: '100%' }}>
-            <Typography variant="subtitle2" color="text.secondary" gutterBottom>
-              Saldo actual
-            </Typography>
+            <Typography variant="subtitle2" color="text.secondary" gutterBottom>Saldo actual</Typography>
             <SaldoText saldo={cliente.saldo} />
-            {cliente.saldo < 0 && (
-              <Typography variant="caption" color="error">Tiene deuda pendiente</Typography>
-            )}
-            {cliente.saldo > 0 && (
-              <Typography variant="caption" color="success.main">Tiene saldo a favor</Typography>
-            )}
+            {Number(cliente.saldo) < 0 && <Typography variant="caption" color="error">Tiene deuda pendiente</Typography>}
+            {Number(cliente.saldo) > 0 && <Typography variant="caption" color="success.main">Tiene saldo a favor</Typography>}
           </Paper>
         </Grid>
-
         <Grid item xs={12} md={4}>
           <Paper variant="outlined" sx={{ p: 2.5, height: '100%' }}>
-            <Typography variant="subtitle2" color="text.secondary" gutterBottom>
-              Precios fijos acordados
-            </Typography>
+            <Typography variant="subtitle2" color="text.secondary" gutterBottom>Precios fijos acordados</Typography>
             <Box sx={{ display: 'flex', gap: 2, flexWrap: 'wrap', mt: 1 }}>
               <Box>
                 <Typography variant="caption" color="text.secondary">Pan de miga</Typography>
@@ -167,21 +173,16 @@ export default function ClientePerfilPage() {
             </Box>
           </Paper>
         </Grid>
-
         <Grid item xs={12} md={4}>
           <Paper variant="outlined" sx={{ p: 2.5, height: '100%' }}>
-            <Typography variant="subtitle2" color="text.secondary" gutterBottom>
-              Dirección del local
-            </Typography>
+            <Typography variant="subtitle2" color="text.secondary" gutterBottom>Dirección del local</Typography>
             {cliente.direccion ? (
               <Box sx={{ display: 'flex', gap: 1, alignItems: 'flex-start', mt: 0.5 }}>
                 <DireccionIcon fontSize="small" color="action" sx={{ mt: 0.2 }} />
                 <Typography>{cliente.direccion}</Typography>
               </Box>
             ) : (
-              <Typography color="text.secondary" variant="body2" sx={{ mt: 0.5 }}>
-                Sin dirección registrada
-              </Typography>
+              <Typography color="text.secondary" variant="body2" sx={{ mt: 0.5 }}>Sin dirección registrada</Typography>
             )}
           </Paper>
         </Grid>
@@ -189,31 +190,13 @@ export default function ClientePerfilPage() {
 
       {/* Filtro de fechas */}
       <Paper variant="outlined" sx={{ p: 2, mb: 3 }}>
-        <Typography variant="subtitle2" fontWeight={600} gutterBottom>
-          Filtrar por período
-        </Typography>
+        <Typography variant="subtitle2" fontWeight={600} gutterBottom>Filtrar ventas por período</Typography>
         <Box sx={{ display: 'flex', gap: 1.5, alignItems: 'center', flexWrap: 'wrap' }}>
-          <TextField
-            label="Desde"
-            type="date"
-            size="small"
-            value={desde}
-            onChange={(e) => setDesde(e.target.value)}
-            InputLabelProps={{ shrink: true }}
-            sx={{ width: 160 }}
-          />
-          <TextField
-            label="Hasta"
-            type="date"
-            size="small"
-            value={hasta}
-            onChange={(e) => setHasta(e.target.value)}
-            InputLabelProps={{ shrink: true }}
-            sx={{ width: 160 }}
-          />
-          <Button variant="contained" size="small" startIcon={<FilterIcon />} onClick={handleFiltrar}>
-            Filtrar
-          </Button>
+          <TextField label="Desde" type="date" size="small" value={desde}
+            onChange={(e) => setDesde(e.target.value)} InputLabelProps={{ shrink: true }} sx={{ width: 160 }} />
+          <TextField label="Hasta" type="date" size="small" value={hasta}
+            onChange={(e) => setHasta(e.target.value)} InputLabelProps={{ shrink: true }} sx={{ width: 160 }} />
+          <Button variant="contained" size="small" startIcon={<FilterIcon />} onClick={handleFiltrar}>Filtrar</Button>
           <Button size="small" onClick={setRangoHoy}>Hoy</Button>
           <Button size="small" onClick={setRangoMes}>Este mes</Button>
           <Button size="small" color="inherit" onClick={limpiarFiltro}>Limpiar</Button>
@@ -226,42 +209,103 @@ export default function ClientePerfilPage() {
         <Grid item xs={6} sm={3}>
           <Paper variant="outlined" sx={{ p: 2, textAlign: 'center' }}>
             <MigaIcon color="primary" sx={{ mb: 0.5 }} />
-            <Typography variant="caption" color="text.secondary" display="block">
-              Panes de miga
-            </Typography>
-            <Typography variant="h5" fontWeight={700}>{formatNum(perfil.totalPanesMiga)}</Typography>
+            <Typography variant="caption" color="text.secondary" display="block">Panes de miga</Typography>
+            <Typography variant="h5" fontWeight={700}>{formatCant(perfil.totalPanesMiga)}</Typography>
           </Paper>
         </Grid>
         <Grid item xs={6} sm={3}>
           <Paper variant="outlined" sx={{ p: 2, textAlign: 'center' }}>
             <RalladoIcon color="primary" sx={{ mb: 0.5 }} />
-            <Typography variant="caption" color="text.secondary" display="block">
-              Kg de rallado
-            </Typography>
-            <Typography variant="h5" fontWeight={700}>{formatNum(perfil.totalKgRallado)}</Typography>
+            <Typography variant="caption" color="text.secondary" display="block">Kg de rallado</Typography>
+            <Typography variant="h5" fontWeight={700}>{formatKg(perfil.totalKgRallado)}</Typography>
           </Paper>
         </Grid>
         <Grid item xs={6} sm={3}>
           <Paper variant="outlined" sx={{ p: 2, textAlign: 'center' }}>
-            <Typography variant="caption" color="text.secondary" display="block">
-              Facturado miga
-            </Typography>
-            <Typography variant="h6" fontWeight={700} color="primary">
-              {formatPeso(perfil.totalFacturadoMiga)}
-            </Typography>
+            <Typography variant="caption" color="text.secondary" display="block">Facturado miga</Typography>
+            <Typography variant="h6" fontWeight={700} color="primary">{formatPeso(perfil.totalFacturadoMiga)}</Typography>
           </Paper>
         </Grid>
         <Grid item xs={6} sm={3}>
           <Paper variant="outlined" sx={{ p: 2, textAlign: 'center' }}>
-            <Typography variant="caption" color="text.secondary" display="block">
-              Facturado rallado
-            </Typography>
-            <Typography variant="h6" fontWeight={700} color="primary">
-              {formatPeso(perfil.totalFacturadoRallado)}
-            </Typography>
+            <Typography variant="caption" color="text.secondary" display="block">Facturado rallado</Typography>
+            <Typography variant="h6" fontWeight={700} color="primary">{formatPeso(perfil.totalFacturadoRallado)}</Typography>
           </Paper>
         </Grid>
       </Grid>
+
+      {/* ── PAGOS ── */}
+      <Paper variant="outlined" sx={{ p: 2.5, mb: 3 }}>
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 2 }}>
+          <PagosIcon color="success" />
+          <Typography variant="h6" fontWeight={600}>
+            Pagos recibidos
+          </Typography>
+          {(perfil.pagos || []).length > 0 && (
+            <Chip label={`Total: ${formatPeso(totalPagos)}`} color="success" size="small" sx={{ ml: 1 }} />
+          )}
+        </Box>
+
+        {/* Formulario nuevo pago */}
+        <Box sx={{ display: 'flex', gap: 1.5, alignItems: 'center', flexWrap: 'wrap', mb: 2 }}>
+          <TextField
+            label="Fecha" type="date" size="small"
+            value={formPago.fecha}
+            onChange={(e) => setFormPago({ ...formPago, fecha: e.target.value })}
+            InputLabelProps={{ shrink: true }} sx={{ width: 155 }}
+          />
+          <TextField
+            label="Monto" type="number" size="small"
+            value={formPago.monto}
+            onChange={(e) => setFormPago({ ...formPago, monto: e.target.value })}
+            InputProps={{ startAdornment: <InputAdornment position="start">$</InputAdornment> }}
+            inputProps={{ min: 0.01, step: 0.01 }} sx={{ width: 155 }}
+          />
+          <TextField
+            label="Descripción (opcional)" size="small"
+            value={formPago.descripcion}
+            onChange={(e) => setFormPago({ ...formPago, descripcion: e.target.value })}
+            sx={{ width: 220 }}
+          />
+          <Button
+            variant="contained" color="success" size="small"
+            startIcon={savingPago ? <CircularProgress size={16} color="inherit" /> : <AddIcon />}
+            onClick={handleRegistrarPago} disabled={savingPago}
+          >
+            Registrar pago
+          </Button>
+        </Box>
+
+        {/* Lista de pagos */}
+        {(perfil.pagos || []).length === 0 ? (
+          <Typography color="text.secondary" variant="body2">Sin pagos registrados.</Typography>
+        ) : (
+          <TableContainer>
+            <Table size="small">
+              <TableHead>
+                <TableRow sx={{ bgcolor: 'grey.50' }}>
+                  <TableCell sx={{ fontWeight: 700 }}>Fecha</TableCell>
+                  <TableCell align="right" sx={{ fontWeight: 700 }}>Monto</TableCell>
+                  <TableCell sx={{ fontWeight: 700 }}>Descripción</TableCell>
+                </TableRow>
+              </TableHead>
+              <TableBody>
+                {perfil.pagos.map((p) => (
+                  <TableRow key={p.id} hover>
+                    <TableCell>{p.fecha}</TableCell>
+                    <TableCell align="right" sx={{ fontWeight: 600, color: 'success.main' }}>
+                      {formatPeso(p.monto)}
+                    </TableCell>
+                    <TableCell>{p.descripcion || <em style={{ color: '#aaa' }}>—</em>}</TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </TableContainer>
+        )}
+      </Paper>
+
+      <Divider sx={{ my: 2 }} />
 
       {/* Historial miga */}
       <Typography variant="h6" fontWeight={600} sx={{ mb: 1 }}>
@@ -290,7 +334,7 @@ export default function ClientePerfilPage() {
                   <TableCell>
                     <Chip label={v.tipoPan} size="small" color={v.tipoPan === 'BLANCO' ? 'default' : 'warning'} variant="outlined" />
                   </TableCell>
-                  <TableCell align="right">{formatNum(v.cantidad)}</TableCell>
+                  <TableCell align="right">{formatCant(v.cantidad)}</TableCell>
                   <TableCell>{v.unidad === 'ENTERO' ? 'Entero' : 'Medio'}</TableCell>
                   <TableCell align="right">{formatPeso(v.precioUnitario)}</TableCell>
                   <TableCell align="right" sx={{ fontWeight: 600 }}>{formatPeso(v.total)}</TableCell>
@@ -326,7 +370,7 @@ export default function ClientePerfilPage() {
               {perfil.ventasRallado.map((v) => (
                 <TableRow key={v.id} hover>
                   <TableCell>{v.fecha}</TableCell>
-                  <TableCell align="right">{formatNum(v.peso, 3)}</TableCell>
+                  <TableCell align="right">{formatKg(v.peso)}</TableCell>
                   <TableCell align="right">{formatPeso(v.precioPorKg)}</TableCell>
                   <TableCell align="right" sx={{ fontWeight: 600 }}>{formatPeso(v.total)}</TableCell>
                   <TableCell><PagoChip pagado={v.pagado} /></TableCell>

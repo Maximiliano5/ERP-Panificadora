@@ -23,4 +23,5 @@ public class ClientePerfilResponseDTO {
     private BigDecimal totalFacturadoRallado;
     private List<VentaMigaResponseDTO> ventasMiga;
     private List<VentaRalladoResponseDTO> ventasRallado;
+    private List<PagoClienteResponseDTO> pagos;
 }

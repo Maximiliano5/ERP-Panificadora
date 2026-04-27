@@ -67,6 +67,17 @@ public class ClienteController {
         return ResponseEntity.ok(clienteService.actualizarSaldo(id, dto));
     }
 
+    @PostMapping("/{id}/pagos")
+    public ResponseEntity<PagoClienteResponseDTO> registrarPago(
+            @PathVariable Long id, @Valid @RequestBody PagoClienteRequestDTO dto) {
+        return ResponseEntity.status(HttpStatus.CREATED).body(clienteService.registrarPago(id, dto));
+    }
+
+    @GetMapping("/{id}/pagos")
+    public ResponseEntity<List<PagoClienteResponseDTO>> listarPagos(@PathVariable Long id) {
+        return ResponseEntity.ok(clienteService.listarPagos(id));
+    }
+
     @GetMapping("/{id}/perfil")
     public ResponseEntity<ClientePerfilResponseDTO> perfil(
             @PathVariable Long id,

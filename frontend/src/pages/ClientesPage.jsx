@@ -282,7 +282,10 @@ export default function ClientesPage() {
               <TableBody>
                 {clientesFiltrados.map((c) => (
                   <TableRow key={c.id} hover>
-                    <TableCell>
+                    <TableCell
+                      sx={{ cursor: 'pointer', '&:hover': { textDecoration: 'underline', color: 'primary.main' } }}
+                      onClick={() => navigate(`/clientes/${c.id}`)}
+                    >
                       {c.nombre} {c.apellido}
                     </TableCell>
                     <TableCell>
@@ -297,14 +300,6 @@ export default function ClientesPage() {
                       <SaldoChip saldo={c.saldo} />
                     </TableCell>
                     <TableCell align="right">
-                      <IconButton
-                        size="small"
-                        title="Ver perfil"
-                        onClick={() => navigate(`/clientes/${c.id}`)}
-                        color="secondary"
-                      >
-                        <PerfilIcon fontSize="small" />
-                      </IconButton>
                       <IconButton
                         size="small"
                         title="Ajustar saldo"
@@ -366,13 +361,15 @@ export default function ClientesPage() {
               ))}
             </Select>
           </FormControl>
-          <TextField
-            label="Dirección del local (opcional)"
-            value={form.direccion}
-            onChange={(e) => setForm({ ...form, direccion: e.target.value })}
-            size="small"
-            fullWidth
-          />
+          {form.tipo === 'CLIENTE' && (
+            <TextField
+              label="Dirección del local (opcional)"
+              value={form.direccion}
+              onChange={(e) => setForm({ ...form, direccion: e.target.value })}
+              size="small"
+              fullWidth
+            />
+          )}
           <TextField
             label="Precio fijo miga (opcional)"
             type="number"
