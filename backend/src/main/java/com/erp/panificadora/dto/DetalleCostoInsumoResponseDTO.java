@@ -18,6 +18,7 @@ public class DetalleCostoInsumoResponseDTO {
     private Long id;
     private Long mercaderiaId;
     private String mercaderiaNombre;
+    private Integer cantidad;
     private BigDecimal porcentajeUso;
     private BigDecimal costoCalculado;
     private BigDecimal precioUnitarioMercaderia;

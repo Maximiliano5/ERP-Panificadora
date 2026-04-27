@@ -26,6 +26,9 @@ public class DetalleCostoInsumo {
     @JoinColumn(name = "mercaderia_id", nullable = false)
     private Mercaderia mercaderia;
 
+    @Column(name = "cantidad", nullable = false)
+    private Integer cantidad;
+
     @Column(name = "porcentaje_uso", precision = 8, scale = 2, nullable = false)
     private BigDecimal porcentajeUso;
 

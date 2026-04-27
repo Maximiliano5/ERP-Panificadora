@@ -35,6 +35,7 @@ public class CostoProduccionService {
                             "Mercadería no encontrada con id: " + insumoDto.getMercaderiaId()));
 
             BigDecimal costoCalculado = mercaderia.getPrecioUnitario()
+                    .multiply(BigDecimal.valueOf(insumoDto.getCantidad()))
                     .multiply(insumoDto.getPorcentajeUso())
                     .divide(BigDecimal.valueOf(100), 4, RoundingMode.HALF_UP);
 
@@ -42,6 +43,7 @@ public class CostoProduccionService {
 
             detalles.add(DetalleCostoInsumo.builder()
                     .mercaderia(mercaderia)
+                    .cantidad(insumoDto.getCantidad())
                     .porcentajeUso(insumoDto.getPorcentajeUso())
                     .costoCalculado(costoCalculado)
                     .build());
@@ -135,6 +137,7 @@ public class CostoProduccionService {
                         .id(d.getId())
                         .mercaderiaId(d.getMercaderia().getId())
                         .mercaderiaNombre(d.getMercaderia().getNombre())
+                        .cantidad(d.getCantidad())
                         .porcentajeUso(d.getPorcentajeUso())
                         .costoCalculado(d.getCostoCalculado())
                         .precioUnitarioMercaderia(d.getMercaderia().getPrecioUnitario())

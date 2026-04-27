@@ -47,7 +47,7 @@ export default function CostoProduccionPage() {
   const [nombre, setNombre] = useState('');
   const [cantidadUnidades, setCantidadUnidades] = useState('');
   const [costoBolsa, setCostoBolsa] = useState('');
-  const [insumos, setInsumos] = useState([{ mercaderiaId: '', porcentajeUso: '' }]);
+  const [insumos, setInsumos] = useState([{ mercaderiaId: '', cantidad: 1, porcentajeUso: '' }]);
   const [costosFijos, setCostosFijos] = useState(EMPTY_COSTOS_FIJOS);
   const [costosAdicionales, setCostosAdicionales] = useState([]);
 
@@ -68,7 +68,7 @@ export default function CostoProduccionPage() {
     if (tab === 1) fetchHistorial();
   }, [tab, fetchHistorial]);
 
-  const addInsumo = () => setInsumos([...insumos, { mercaderiaId: '', porcentajeUso: '' }]);
+  const addInsumo = () => setInsumos([...insumos, { mercaderiaId: '', cantidad: 1, porcentajeUso: '' }]);
   const removeInsumo = (i) => setInsumos(insumos.filter((_, idx) => idx !== i));
   const updateInsumo = (i, field, value) => {
     const updated = [...insumos];
@@ -93,6 +93,7 @@ export default function CostoProduccionPage() {
         costoBolsasUnitario: parseFloat(costoBolsa) || 0,
         insumos: insumos.map((ins) => ({
           mercaderiaId: parseInt(ins.mercaderiaId, 10),
+          cantidad: parseInt(ins.cantidad, 10) || 1,
           porcentajeUso: parseFloat(ins.porcentajeUso),
         })),
         costosFijos: {
@@ -215,6 +216,16 @@ export default function CostoProduccionPage() {
                         ))}
                       </Select>
                     </FormControl>
+                    <TextField
+                      size="small"
+                      label="Cantidad"
+                      type="number"
+                      value={insumo.cantidad}
+                      onChange={(e) => updateInsumo(i, 'cantidad', e.target.value)}
+                      sx={{ width: 100 }}
+                      inputProps={{ min: 1, step: 1 }}
+                      helperText="unidades"
+                    />
                     <TextField
                       size="small"
                       label="% de uso"
@@ -384,6 +395,7 @@ export default function CostoProduccionPage() {
                           <TableHead>
                             <TableRow sx={{ bgcolor: 'grey.50' }}>
                               <TableCell sx={{ fontWeight: 700 }}>Mercadería</TableCell>
+                              <TableCell align="right" sx={{ fontWeight: 700 }}>Cant.</TableCell>
                               <TableCell align="right" sx={{ fontWeight: 700 }}>Precio unitario</TableCell>
                               <TableCell align="right" sx={{ fontWeight: 700 }}>% Uso</TableCell>
                               <TableCell align="right" sx={{ fontWeight: 700 }}>Costo calculado</TableCell>
@@ -393,6 +405,7 @@ export default function CostoProduccionPage() {
                             {resultado.insumos.map((ins) => (
                               <TableRow key={ins.id} hover>
                                 <TableCell>{ins.mercaderiaNombre}</TableCell>
+                                <TableCell align="right">{ins.cantidad}</TableCell>
                                 <TableCell align="right">
                                   {formatPeso(ins.precioUnitarioMercaderia)}
                                 </TableCell>
@@ -558,6 +571,7 @@ export default function CostoProduccionPage() {
                         <TableHead>
                           <TableRow sx={{ bgcolor: 'grey.50' }}>
                             <TableCell sx={{ fontWeight: 700 }}>Mercadería</TableCell>
+                            <TableCell align="right" sx={{ fontWeight: 700 }}>Cant.</TableCell>
                             <TableCell align="right" sx={{ fontWeight: 700 }}>% Uso</TableCell>
                             <TableCell align="right" sx={{ fontWeight: 700 }}>Costo</TableCell>
                           </TableRow>
@@ -566,6 +580,7 @@ export default function CostoProduccionPage() {
                           {item.insumos.map((ins) => (
                             <TableRow key={ins.id} hover>
                               <TableCell>{ins.mercaderiaNombre}</TableCell>
+                              <TableCell align="right">{ins.cantidad}</TableCell>
                               <TableCell align="right">{ins.porcentajeUso}%</TableCell>
                               <TableCell align="right">{formatPeso(ins.costoCalculado)}</TableCell>
                             </TableRow>
