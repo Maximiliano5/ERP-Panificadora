@@ -9,6 +9,8 @@ import MercaderiaPage from './pages/MercaderiaPage';
 import MovimientosPage from './pages/MovimientosPage';
 import ProduccionPage from './pages/ProduccionPage';
 import CostoProduccionPage from './pages/CostoProduccionPage';
+import ClientesPage from './pages/ClientesPage';
+import VentasPage from './pages/VentasPage';
 
 function App() {
   return (
@@ -28,6 +30,8 @@ function App() {
             <Route path="/movimientos" element={<MovimientosPage />} />
             <Route path="/produccion" element={<ProduccionPage />} />
             <Route path="/costos-produccion" element={<CostoProduccionPage />} />
+            <Route path="/clientes" element={<ClientesPage />} />
+            <Route path="/ventas" element={<VentasPage />} />
           </Routes>
         </BrowserRouter>
       </SnackbarProvider>

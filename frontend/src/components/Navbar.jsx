@@ -10,6 +10,8 @@ import {
   SwapVert as MovimientosIcon,
   Menu as MenuIcon,
   Calculate as CalculateIcon,
+  PeopleAlt as ClientesIcon,
+  PointOfSale as VentasIcon,
 } from '@mui/icons-material';
 import PanMoldeIcon from './PanMoldeIcon';
 import { useNavigate, useLocation } from 'react-router-dom';
@@ -22,6 +24,8 @@ const navItems = [
   { label: 'Movimientos', path: '/movimientos', icon: <MovimientosIcon /> },
   { label: 'Producción', path: '/produccion', icon: <img src={panIcon} alt="Producción" style={{ width: 22, height: 22, objectFit: 'contain' }} /> },
   { label: 'Costos', path: '/costos-produccion', icon: <CalculateIcon /> },
+  { label: 'Clientes', path: '/clientes', icon: <ClientesIcon /> },
+  { label: 'Ventas', path: '/ventas', icon: <VentasIcon /> },
 ];
 
 export default function Navbar() {
