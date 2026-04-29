@@ -23,12 +23,12 @@ const formatPeso = (n) =>
     ? `$${Number(n).toLocaleString('es-AR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
     : '-';
 
-const PagoChip = ({ pagado }) =>
-  pagado ? (
-    <Chip label="Pagado" color="success" size="small" />
-  ) : (
-    <Chip label="Impago" color="error" size="small" variant="outlined" />
-  );
+const EstadoPagoChip = ({ estadoPago }) => {
+  if (estadoPago === 'PAGADO') return <Chip label="Pagado" color="success" size="small" />;
+  if (estadoPago === 'INCOMPLETO')
+    return <Chip label="Pago incompleto" size="small" sx={{ bgcolor: '#ff9800', color: 'white' }} />;
+  return <Chip label="Impago" color="error" size="small" variant="outlined" />;
+};
 
 const EMPTY_MIGA = {
   fecha: today(),
@@ -232,7 +232,15 @@ export default function VentasPage() {
                   <Select
                     value={formMiga.clienteId}
                     label="Cliente"
-                    onChange={(e) => setFormMiga({ ...formMiga, clienteId: e.target.value })}
+                    onChange={(e) => {
+                      const clienteId = e.target.value;
+                      const c = clientes.find((x) => x.id === clienteId);
+                      setFormMiga({
+                        ...formMiga,
+                        clienteId,
+                        precioUnitario: c?.precioMiga != null ? String(c.precioMiga) : formMiga.precioUnitario,
+                      });
+                    }}
                   >
                     {clientes.map((c) => (
                       <MenuItem key={c.id} value={c.id}>
@@ -364,7 +372,7 @@ export default function VentasPage() {
                           {formatPeso(v.total)}
                         </TableCell>
                         <TableCell>
-                          <PagoChip pagado={v.pagado} />
+                          <EstadoPagoChip estadoPago={v.estadoPago} />
                         </TableCell>
                       </TableRow>
                     ))}
@@ -423,7 +431,15 @@ export default function VentasPage() {
                   <Select
                     value={formRallado.clienteId}
                     label="Cliente"
-                    onChange={(e) => setFormRallado({ ...formRallado, clienteId: e.target.value })}
+                    onChange={(e) => {
+                      const clienteId = e.target.value;
+                      const c = clientes.find((x) => x.id === clienteId);
+                      setFormRallado({
+                        ...formRallado,
+                        clienteId,
+                        precioPorKg: c?.precioRallado != null ? String(c.precioRallado) : formRallado.precioPorKg,
+                      });
+                    }}
                   >
                     {clientes.map((c) => (
                       <MenuItem key={c.id} value={c.id}>
@@ -519,7 +535,7 @@ export default function VentasPage() {
                           {formatPeso(v.total)}
                         </TableCell>
                         <TableCell>
-                          <PagoChip pagado={v.pagado} />
+                          <EstadoPagoChip estadoPago={v.estadoPago} />
                         </TableCell>
                       </TableRow>
                     ))}

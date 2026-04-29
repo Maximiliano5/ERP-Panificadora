@@ -24,4 +24,6 @@ public class VentaRalladoResponseDTO {
     private BigDecimal precioPorKg;
     private BigDecimal total;
     private boolean pagado;
+    private BigDecimal montoPagado;
+    private String estadoPago;
 }

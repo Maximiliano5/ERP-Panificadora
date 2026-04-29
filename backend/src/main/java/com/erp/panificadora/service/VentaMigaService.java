@@ -40,6 +40,7 @@ public class VentaMigaService {
                 .precioUnitario(dto.getPrecioUnitario())
                 .total(total)
                 .pagado(dto.getPagado())
+                .montoPagado(dto.getPagado() ? total : BigDecimal.ZERO)
                 .build();
 
         if (!dto.getPagado()) {
@@ -79,6 +80,12 @@ public class VentaMigaService {
     }
 
     private VentaMigaResponseDTO toResponseDTO(VentaMiga v) {
+        BigDecimal montoPagado = v.getMontoPagado() != null ? v.getMontoPagado() : BigDecimal.ZERO;
+        String estadoPago;
+        if (v.isPagado()) estadoPago = "PAGADO";
+        else if (montoPagado.compareTo(BigDecimal.ZERO) > 0) estadoPago = "INCOMPLETO";
+        else estadoPago = "IMPAGO";
+
         return VentaMigaResponseDTO.builder()
                 .id(v.getId())
                 .fecha(v.getFecha())
@@ -90,6 +97,8 @@ public class VentaMigaService {
                 .precioUnitario(v.getPrecioUnitario())
                 .total(v.getTotal())
                 .pagado(v.isPagado())
+                .montoPagado(montoPagado)
+                .estadoPago(estadoPago)
                 .build();
     }
 }

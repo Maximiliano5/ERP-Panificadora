@@ -19,4 +19,6 @@ public interface VentaRalladoRepository extends JpaRepository<VentaPanRallado, L
     List<VentaPanRallado> findByClienteIdOrderByFechaDesc(Long clienteId);
 
     List<VentaPanRallado> findByClienteIdAndFechaBetweenOrderByFechaDesc(Long clienteId, LocalDate desde, LocalDate hasta);
+
+    List<VentaPanRallado> findByClienteIdAndPagadoFalseOrderByFechaAscIdAsc(Long clienteId);
 }

@@ -4,6 +4,7 @@ import com.erp.panificadora.dto.*;
 import com.erp.panificadora.exception.ResourceNotFoundException;
 import com.erp.panificadora.model.Cliente;
 import com.erp.panificadora.model.PagoCliente;
+import com.erp.panificadora.model.TipoPago;
 import com.erp.panificadora.model.VentaMiga;
 import com.erp.panificadora.model.VentaPanRallado;
 import com.erp.panificadora.repository.ClienteRepository;
@@ -144,15 +145,53 @@ public class ClienteService {
 
         PagoCliente pago = PagoCliente.builder()
                 .cliente(cliente)
-                .fecha(dto.getFecha() != null ? dto.getFecha() : java.time.LocalDate.now())
+                .fecha(dto.getFecha() != null ? dto.getFecha() : LocalDate.now())
                 .monto(dto.getMonto())
                 .descripcion(dto.getDescripcion())
+                .tipoPago(dto.getTipoPago())
                 .build();
 
         cliente.setSaldo(cliente.getSaldo().add(dto.getMonto()));
         clienteRepository.save(cliente);
 
+        liquidarDeudaFIFO(clienteId, dto.getMonto(), dto.getTipoPago());
+
         return toPagoDTO(pagoClienteRepository.save(pago));
+    }
+
+    private void liquidarDeudaFIFO(Long clienteId, BigDecimal montoPago, TipoPago tipo) {
+        BigDecimal restante = montoPago;
+        if (tipo == TipoPago.MIGA) {
+            for (VentaMiga m : ventaMigaRepository.findByClienteIdAndPagadoFalseOrderByFechaAscIdAsc(clienteId)) {
+                if (restante.compareTo(BigDecimal.ZERO) <= 0) break;
+                BigDecimal mp = m.getMontoPagado() != null ? m.getMontoPagado() : BigDecimal.ZERO;
+                BigDecimal deuda = m.getTotal().subtract(mp);
+                if (restante.compareTo(deuda) >= 0) {
+                    restante = restante.subtract(deuda);
+                    m.setPagado(true);
+                    m.setMontoPagado(m.getTotal());
+                } else {
+                    m.setMontoPagado(mp.add(restante));
+                    restante = BigDecimal.ZERO;
+                }
+                ventaMigaRepository.save(m);
+            }
+        } else {
+            for (VentaPanRallado r : ventaRalladoRepository.findByClienteIdAndPagadoFalseOrderByFechaAscIdAsc(clienteId)) {
+                if (restante.compareTo(BigDecimal.ZERO) <= 0) break;
+                BigDecimal mp = r.getMontoPagado() != null ? r.getMontoPagado() : BigDecimal.ZERO;
+                BigDecimal deuda = r.getTotal().subtract(mp);
+                if (restante.compareTo(deuda) >= 0) {
+                    restante = restante.subtract(deuda);
+                    r.setPagado(true);
+                    r.setMontoPagado(r.getTotal());
+                } else {
+                    r.setMontoPagado(mp.add(restante));
+                    restante = BigDecimal.ZERO;
+                }
+                ventaRalladoRepository.save(r);
+            }
+        }
     }
 
     @Transactional(readOnly = true)
@@ -181,6 +220,8 @@ public class ClienteService {
     }
 
     private VentaMigaResponseDTO toVentaMigaDTO(VentaMiga v) {
+        BigDecimal mp = v.getMontoPagado() != null ? v.getMontoPagado() : BigDecimal.ZERO;
+        String ep = v.isPagado() ? "PAGADO" : mp.compareTo(BigDecimal.ZERO) > 0 ? "INCOMPLETO" : "IMPAGO";
         return VentaMigaResponseDTO.builder()
                 .id(v.getId())
                 .fecha(v.getFecha())
@@ -192,6 +233,8 @@ public class ClienteService {
                 .precioUnitario(v.getPrecioUnitario())
                 .total(v.getTotal())
                 .pagado(v.isPagado())
+                .montoPagado(mp)
+                .estadoPago(ep)
                 .build();
     }
 
@@ -202,10 +245,13 @@ public class ClienteService {
                 .fecha(p.getFecha())
                 .monto(p.getMonto())
                 .descripcion(p.getDescripcion())
+                .tipoPago(p.getTipoPago() != null ? p.getTipoPago().name() : null)
                 .build();
     }
 
     private VentaRalladoResponseDTO toVentaRalladoDTO(VentaPanRallado v) {
+        BigDecimal mp = v.getMontoPagado() != null ? v.getMontoPagado() : BigDecimal.ZERO;
+        String ep = v.isPagado() ? "PAGADO" : mp.compareTo(BigDecimal.ZERO) > 0 ? "INCOMPLETO" : "IMPAGO";
         return VentaRalladoResponseDTO.builder()
                 .id(v.getId())
                 .fecha(v.getFecha())
@@ -215,6 +261,8 @@ public class ClienteService {
                 .precioPorKg(v.getPrecioPorKg())
                 .total(v.getTotal())
                 .pagado(v.isPagado())
+                .montoPagado(mp)
+                .estadoPago(ep)
                 .build();
     }
 }

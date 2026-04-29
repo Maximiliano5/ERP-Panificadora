@@ -21,4 +21,5 @@ public class PagoClienteResponseDTO {
     private LocalDate fecha;
     private BigDecimal monto;
     private String descripcion;
+    private String tipoPago;
 }

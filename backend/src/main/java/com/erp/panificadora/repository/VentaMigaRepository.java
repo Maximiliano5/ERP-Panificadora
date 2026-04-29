@@ -19,4 +19,6 @@ public interface VentaMigaRepository extends JpaRepository<VentaMiga, Long> {
     List<VentaMiga> findByClienteIdOrderByFechaDesc(Long clienteId);
 
     List<VentaMiga> findByClienteIdAndFechaBetweenOrderByFechaDesc(Long clienteId, LocalDate desde, LocalDate hasta);
+
+    List<VentaMiga> findByClienteIdAndPagadoFalseOrderByFechaAscIdAsc(Long clienteId);
 }

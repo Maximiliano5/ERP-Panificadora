@@ -1,5 +1,6 @@
 package com.erp.panificadora.dto;
 
+import com.erp.panificadora.model.TipoPago;
 import jakarta.validation.constraints.DecimalMin;
 import jakarta.validation.constraints.NotNull;
 import lombok.AllArgsConstructor;
@@ -23,4 +24,7 @@ public class PagoClienteRequestDTO {
     private BigDecimal monto;
 
     private String descripcion;
+
+    @NotNull(message = "El tipo de pago es requerido")
+    private TipoPago tipoPago;
 }

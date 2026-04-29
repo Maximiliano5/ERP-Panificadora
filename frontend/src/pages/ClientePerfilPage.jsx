@@ -3,7 +3,7 @@ import {
   Box, Button, Typography, Container, TextField,
   Paper, Grid, Divider, Chip, CircularProgress,
   Table, TableBody, TableCell, TableContainer, TableHead, TableRow,
-  InputAdornment,
+  InputAdornment, ToggleButton, ToggleButtonGroup,
 } from '@mui/material';
 import {
   ArrowBack as BackIcon,
@@ -29,12 +29,12 @@ const formatCant = (n) =>
 const formatKg = (n) =>
   n != null ? Number(n).toLocaleString('es-AR', { maximumFractionDigits: 3 }) : '-';
 
-const PagoChip = ({ pagado }) =>
-  pagado ? (
-    <Chip label="Pagado" color="success" size="small" />
-  ) : (
-    <Chip label="Impago" color="error" size="small" variant="outlined" />
-  );
+const EstadoPagoChip = ({ estadoPago }) => {
+  if (estadoPago === 'PAGADO') return <Chip label="Pagado" color="success" size="small" />;
+  if (estadoPago === 'INCOMPLETO')
+    return <Chip label="Pago incompleto" size="small" sx={{ bgcolor: '#ff9800', color: 'white' }} />;
+  return <Chip label="Impago" color="error" size="small" variant="outlined" />;
+};
 
 const SaldoText = ({ saldo }) => {
   const val = Number(saldo);
@@ -49,7 +49,7 @@ const firstOfMonth = () => {
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-01`;
 };
 
-const EMPTY_PAGO = { fecha: today(), monto: '', descripcion: '' };
+const EMPTY_PAGO = { fecha: today(), monto: '', descripcion: '', tipoPago: 'MIGA' };
 
 export default function ClientePerfilPage() {
   const { id } = useParams();
@@ -99,6 +99,7 @@ export default function ClientePerfilPage() {
         fecha: formPago.fecha || null,
         monto: parseFloat(formPago.monto),
         descripcion: formPago.descripcion || null,
+        tipoPago: formPago.tipoPago,
       });
       enqueueSnackbar('Pago registrado', { variant: 'success' });
       setFormPago(EMPTY_PAGO);
@@ -248,6 +249,15 @@ export default function ClientePerfilPage() {
 
         {/* Formulario nuevo pago */}
         <Box sx={{ display: 'flex', gap: 1.5, alignItems: 'center', flexWrap: 'wrap', mb: 2 }}>
+          <ToggleButtonGroup
+            size="small"
+            exclusive
+            value={formPago.tipoPago}
+            onChange={(_, v) => v && setFormPago({ ...formPago, tipoPago: v })}
+          >
+            <ToggleButton value="MIGA" sx={{ px: 2 }}>Miga</ToggleButton>
+            <ToggleButton value="RALLADO" sx={{ px: 2 }}>Rallado</ToggleButton>
+          </ToggleButtonGroup>
           <TextField
             label="Fecha" type="date" size="small"
             value={formPago.fecha}
@@ -285,6 +295,7 @@ export default function ClientePerfilPage() {
               <TableHead>
                 <TableRow sx={{ bgcolor: 'grey.50' }}>
                   <TableCell sx={{ fontWeight: 700 }}>Fecha</TableCell>
+                  <TableCell sx={{ fontWeight: 700 }}>Tipo</TableCell>
                   <TableCell align="right" sx={{ fontWeight: 700 }}>Monto</TableCell>
                   <TableCell sx={{ fontWeight: 700 }}>Descripción</TableCell>
                 </TableRow>
@@ -293,6 +304,14 @@ export default function ClientePerfilPage() {
                 {perfil.pagos.map((p) => (
                   <TableRow key={p.id} hover>
                     <TableCell>{p.fecha}</TableCell>
+                    <TableCell>
+                      <Chip
+                        label={p.tipoPago === 'MIGA' ? 'Miga' : p.tipoPago === 'RALLADO' ? 'Rallado' : '—'}
+                        size="small"
+                        color={p.tipoPago === 'MIGA' ? 'info' : 'default'}
+                        variant="outlined"
+                      />
+                    </TableCell>
                     <TableCell align="right" sx={{ fontWeight: 600, color: 'success.main' }}>
                       {formatPeso(p.monto)}
                     </TableCell>
@@ -338,7 +357,7 @@ export default function ClientePerfilPage() {
                   <TableCell>{v.unidad === 'ENTERO' ? 'Entero' : 'Medio'}</TableCell>
                   <TableCell align="right">{formatPeso(v.precioUnitario)}</TableCell>
                   <TableCell align="right" sx={{ fontWeight: 600 }}>{formatPeso(v.total)}</TableCell>
-                  <TableCell><PagoChip pagado={v.pagado} /></TableCell>
+                  <TableCell><EstadoPagoChip estadoPago={v.estadoPago} /></TableCell>
                 </TableRow>
               ))}
             </TableBody>
@@ -373,7 +392,7 @@ export default function ClientePerfilPage() {
                   <TableCell align="right">{formatKg(v.peso)}</TableCell>
                   <TableCell align="right">{formatPeso(v.precioPorKg)}</TableCell>
                   <TableCell align="right" sx={{ fontWeight: 600 }}>{formatPeso(v.total)}</TableCell>
-                  <TableCell><PagoChip pagado={v.pagado} /></TableCell>
+                  <TableCell><EstadoPagoChip estadoPago={v.estadoPago} /></TableCell>
                 </TableRow>
               ))}
             </TableBody>

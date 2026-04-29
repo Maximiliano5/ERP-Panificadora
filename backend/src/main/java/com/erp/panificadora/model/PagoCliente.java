@@ -31,4 +31,8 @@ public class PagoCliente {
 
     @Column
     private String descripcion;
+
+    @Enumerated(EnumType.STRING)
+    @Column(name = "tipo_pago")
+    private TipoPago tipoPago;
 }

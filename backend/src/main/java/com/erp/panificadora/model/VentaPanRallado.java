@@ -37,4 +37,8 @@ public class VentaPanRallado {
 
     @Column(nullable = false)
     private boolean pagado;
+
+    @Builder.Default
+    @Column(name = "monto_pagado", precision = 14, scale = 2)
+    private BigDecimal montoPagado = BigDecimal.ZERO;
 }

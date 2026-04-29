@@ -26,4 +26,6 @@ public class VentaMigaResponseDTO {
     private BigDecimal precioUnitario;
     private BigDecimal total;
     private boolean pagado;
+    private BigDecimal montoPagado;
+    private String estadoPago;
 }

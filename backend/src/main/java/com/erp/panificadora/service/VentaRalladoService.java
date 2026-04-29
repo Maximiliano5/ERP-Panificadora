@@ -38,6 +38,7 @@ public class VentaRalladoService {
                 .precioPorKg(dto.getPrecioPorKg())
                 .total(total)
                 .pagado(dto.getPagado())
+                .montoPagado(dto.getPagado() ? total : BigDecimal.ZERO)
                 .build();
 
         if (!dto.getPagado()) {
@@ -77,6 +78,12 @@ public class VentaRalladoService {
     }
 
     private VentaRalladoResponseDTO toResponseDTO(VentaPanRallado v) {
+        BigDecimal montoPagado = v.getMontoPagado() != null ? v.getMontoPagado() : BigDecimal.ZERO;
+        String estadoPago;
+        if (v.isPagado()) estadoPago = "PAGADO";
+        else if (montoPagado.compareTo(BigDecimal.ZERO) > 0) estadoPago = "INCOMPLETO";
+        else estadoPago = "IMPAGO";
+
         return VentaRalladoResponseDTO.builder()
                 .id(v.getId())
                 .fecha(v.getFecha())
@@ -86,6 +93,8 @@ public class VentaRalladoService {
                 .precioPorKg(v.getPrecioPorKg())
                 .total(v.getTotal())
                 .pagado(v.isPagado())
+                .montoPagado(montoPagado)
+                .estadoPago(estadoPago)
                 .build();
     }
 }
