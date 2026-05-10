@@ -1,9 +1,9 @@
 import React from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
-import { ThemeProvider, CssBaseline } from '@mui/material';
+import { ThemeProvider, CssBaseline, Box } from '@mui/material';
 import { SnackbarProvider } from 'notistack';
 import theme from './theme';
-import Navbar from './components/Navbar';
+import Sidebar from './components/Sidebar';
 import Dashboard from './pages/Dashboard';
 import MercaderiaPage from './pages/MercaderiaPage';
 import MovimientosPage from './pages/MovimientosPage';
@@ -23,18 +23,22 @@ function App() {
         autoHideDuration={4000}
       >
         <BrowserRouter>
-          <Navbar />
-          <Routes>
-            <Route path="/" element={<Navigate to="/dashboard" replace />} />
-            <Route path="/dashboard" element={<Dashboard />} />
-            <Route path="/mercaderias" element={<MercaderiaPage />} />
-            <Route path="/movimientos" element={<MovimientosPage />} />
-            <Route path="/produccion" element={<ProduccionPage />} />
-            <Route path="/costos-produccion" element={<CostoProduccionPage />} />
-            <Route path="/clientes" element={<ClientesPage />} />
-            <Route path="/clientes/:id" element={<ClientePerfilPage />} />
-            <Route path="/ventas" element={<VentasPage />} />
-          </Routes>
+          <Box sx={{ display: 'flex', minHeight: '100vh', bgcolor: 'grey.50' }}>
+            <Sidebar />
+            <Box sx={{ flex: 1, overflow: 'auto', minWidth: 0 }}>
+              <Routes>
+                <Route path="/" element={<Navigate to="/dashboard" replace />} />
+                <Route path="/dashboard" element={<Dashboard />} />
+                <Route path="/mercaderias" element={<MercaderiaPage />} />
+                <Route path="/movimientos" element={<MovimientosPage />} />
+                <Route path="/produccion" element={<ProduccionPage />} />
+                <Route path="/costos-produccion" element={<CostoProduccionPage />} />
+                <Route path="/clientes" element={<ClientesPage />} />
+                <Route path="/clientes/:id" element={<ClientePerfilPage />} />
+                <Route path="/ventas" element={<VentasPage />} />
+              </Routes>
+            </Box>
+          </Box>
         </BrowserRouter>
       </SnackbarProvider>
     </ThemeProvider>

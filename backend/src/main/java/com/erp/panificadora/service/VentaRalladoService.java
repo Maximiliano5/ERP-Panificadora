@@ -4,8 +4,11 @@ import com.erp.panificadora.dto.VentaRalladoRequestDTO;
 import com.erp.panificadora.dto.VentaRalladoResponseDTO;
 import com.erp.panificadora.exception.ResourceNotFoundException;
 import com.erp.panificadora.model.Cliente;
+import com.erp.panificadora.model.PagoCliente;
+import com.erp.panificadora.model.TipoPago;
 import com.erp.panificadora.model.VentaPanRallado;
 import com.erp.panificadora.repository.ClienteRepository;
+import com.erp.panificadora.repository.PagoClienteRepository;
 import com.erp.panificadora.repository.VentaRalladoRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -22,6 +25,7 @@ public class VentaRalladoService {
 
     private final VentaRalladoRepository ventaRalladoRepository;
     private final ClienteRepository clienteRepository;
+    private final PagoClienteRepository pagoClienteRepository;
 
     @Transactional
     public VentaRalladoResponseDTO registrar(VentaRalladoRequestDTO dto) {
@@ -29,10 +33,11 @@ public class VentaRalladoService {
                 .orElseThrow(() -> new ResourceNotFoundException(
                         "Cliente no encontrado con id: " + dto.getClienteId()));
 
+        LocalDate fecha = dto.getFecha() != null ? dto.getFecha() : LocalDate.now();
         BigDecimal total = dto.getPeso().multiply(dto.getPrecioPorKg());
 
         VentaPanRallado venta = VentaPanRallado.builder()
-                .fecha(dto.getFecha() != null ? dto.getFecha() : LocalDate.now())
+                .fecha(fecha)
                 .cliente(cliente)
                 .peso(dto.getPeso())
                 .precioPorKg(dto.getPrecioPorKg())
@@ -41,7 +46,16 @@ public class VentaRalladoService {
                 .montoPagado(dto.getPagado() ? total : BigDecimal.ZERO)
                 .build();
 
-        if (!dto.getPagado()) {
+        if (dto.getPagado()) {
+            // Registrar pago automático al contado (solo el registro, sin modificar saldo)
+            pagoClienteRepository.save(PagoCliente.builder()
+                    .cliente(cliente)
+                    .fecha(fecha)
+                    .monto(total)
+                    .descripcion("Pago al contado")
+                    .tipoPago(TipoPago.RALLADO)
+                    .build());
+        } else {
             BigDecimal sr = cliente.getSaldoRallado() != null ? cliente.getSaldoRallado() : BigDecimal.ZERO;
             cliente.setSaldoRallado(sr.subtract(total));
             clienteRepository.save(cliente);
@@ -63,10 +77,8 @@ public class VentaRalladoService {
             cliente.setSaldoRallado(sr.add(deudaPendiente));
         }
 
-        // Calcular nuevo total
         BigDecimal nuevoTotal = dto.getPeso().multiply(dto.getPrecioPorKg());
 
-        // Aplicar nuevo efecto en saldoRallado
         if (!dto.getPagado()) {
             BigDecimal sr = cliente.getSaldoRallado() != null ? cliente.getSaldoRallado() : BigDecimal.ZERO;
             cliente.setSaldoRallado(sr.subtract(nuevoTotal));

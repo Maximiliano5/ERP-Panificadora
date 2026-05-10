@@ -4,10 +4,13 @@ import com.erp.panificadora.dto.VentaMigaRequestDTO;
 import com.erp.panificadora.dto.VentaMigaResponseDTO;
 import com.erp.panificadora.exception.ResourceNotFoundException;
 import com.erp.panificadora.model.Cliente;
+import com.erp.panificadora.model.PagoCliente;
+import com.erp.panificadora.model.TipoPago;
 import com.erp.panificadora.model.TipoPan;
 import com.erp.panificadora.model.UnidadMiga;
 import com.erp.panificadora.model.VentaMiga;
 import com.erp.panificadora.repository.ClienteRepository;
+import com.erp.panificadora.repository.PagoClienteRepository;
 import com.erp.panificadora.repository.VentaMigaRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -24,6 +27,7 @@ public class VentaMigaService {
 
     private final VentaMigaRepository ventaMigaRepository;
     private final ClienteRepository clienteRepository;
+    private final PagoClienteRepository pagoClienteRepository;
 
     @Transactional
     public VentaMigaResponseDTO registrar(VentaMigaRequestDTO dto) {
@@ -31,10 +35,11 @@ public class VentaMigaService {
                 .orElseThrow(() -> new ResourceNotFoundException(
                         "Cliente no encontrado con id: " + dto.getClienteId()));
 
+        LocalDate fecha = dto.getFecha() != null ? dto.getFecha() : LocalDate.now();
         BigDecimal total = dto.getCantidad().multiply(dto.getPrecioUnitario());
 
         VentaMiga venta = VentaMiga.builder()
-                .fecha(dto.getFecha() != null ? dto.getFecha() : LocalDate.now())
+                .fecha(fecha)
                 .cliente(cliente)
                 .tipoPan(TipoPan.BLANCO)
                 .cantidad(dto.getCantidad())
@@ -45,7 +50,16 @@ public class VentaMigaService {
                 .montoPagado(dto.getPagado() ? total : BigDecimal.ZERO)
                 .build();
 
-        if (!dto.getPagado()) {
+        if (dto.getPagado()) {
+            // Registrar pago automático al contado (solo el registro, sin modificar saldo)
+            pagoClienteRepository.save(PagoCliente.builder()
+                    .cliente(cliente)
+                    .fecha(fecha)
+                    .monto(total)
+                    .descripcion("Pago al contado")
+                    .tipoPago(TipoPago.MIGA)
+                    .build());
+        } else {
             BigDecimal sm = cliente.getSaldoMiga() != null ? cliente.getSaldoMiga() : BigDecimal.ZERO;
             cliente.setSaldoMiga(sm.subtract(total));
             clienteRepository.save(cliente);
@@ -67,10 +81,8 @@ public class VentaMigaService {
             cliente.setSaldoMiga(sm.add(deudaPendiente));
         }
 
-        // Calcular nuevo total
         BigDecimal nuevoTotal = dto.getCantidad().multiply(dto.getPrecioUnitario());
 
-        // Aplicar nuevo efecto en saldoMiga
         if (!dto.getPagado()) {
             BigDecimal sm = cliente.getSaldoMiga() != null ? cliente.getSaldoMiga() : BigDecimal.ZERO;
             cliente.setSaldoMiga(sm.subtract(nuevoTotal));
