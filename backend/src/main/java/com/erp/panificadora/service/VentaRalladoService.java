@@ -42,11 +42,61 @@ public class VentaRalladoService {
                 .build();
 
         if (!dto.getPagado()) {
-            cliente.setSaldo(cliente.getSaldo().subtract(total));
+            BigDecimal sr = cliente.getSaldoRallado() != null ? cliente.getSaldoRallado() : BigDecimal.ZERO;
+            cliente.setSaldoRallado(sr.subtract(total));
             clienteRepository.save(cliente);
         }
 
         return toResponseDTO(ventaRalladoRepository.save(venta));
+    }
+
+    @Transactional
+    public VentaRalladoResponseDTO actualizar(Long id, VentaRalladoRequestDTO dto) {
+        VentaPanRallado venta = findById(id);
+        Cliente cliente = venta.getCliente();
+
+        // Revertir efecto anterior en saldoRallado
+        if (!venta.isPagado()) {
+            BigDecimal mp = venta.getMontoPagado() != null ? venta.getMontoPagado() : BigDecimal.ZERO;
+            BigDecimal deudaPendiente = venta.getTotal().subtract(mp);
+            BigDecimal sr = cliente.getSaldoRallado() != null ? cliente.getSaldoRallado() : BigDecimal.ZERO;
+            cliente.setSaldoRallado(sr.add(deudaPendiente));
+        }
+
+        // Calcular nuevo total
+        BigDecimal nuevoTotal = dto.getPeso().multiply(dto.getPrecioPorKg());
+
+        // Aplicar nuevo efecto en saldoRallado
+        if (!dto.getPagado()) {
+            BigDecimal sr = cliente.getSaldoRallado() != null ? cliente.getSaldoRallado() : BigDecimal.ZERO;
+            cliente.setSaldoRallado(sr.subtract(nuevoTotal));
+        }
+        clienteRepository.save(cliente);
+
+        venta.setFecha(dto.getFecha() != null ? dto.getFecha() : venta.getFecha());
+        venta.setPeso(dto.getPeso());
+        venta.setPrecioPorKg(dto.getPrecioPorKg());
+        venta.setTotal(nuevoTotal);
+        venta.setPagado(dto.getPagado());
+        venta.setMontoPagado(dto.getPagado() ? nuevoTotal : BigDecimal.ZERO);
+
+        return toResponseDTO(ventaRalladoRepository.save(venta));
+    }
+
+    @Transactional
+    public void eliminar(Long id) {
+        VentaPanRallado venta = findById(id);
+        Cliente cliente = venta.getCliente();
+
+        if (!venta.isPagado()) {
+            BigDecimal mp = venta.getMontoPagado() != null ? venta.getMontoPagado() : BigDecimal.ZERO;
+            BigDecimal deudaPendiente = venta.getTotal().subtract(mp);
+            BigDecimal sr = cliente.getSaldoRallado() != null ? cliente.getSaldoRallado() : BigDecimal.ZERO;
+            cliente.setSaldoRallado(sr.add(deudaPendiente));
+            clienteRepository.save(cliente);
+        }
+
+        ventaRalladoRepository.delete(venta);
     }
 
     @Transactional(readOnly = true)

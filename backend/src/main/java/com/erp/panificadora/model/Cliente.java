@@ -42,6 +42,14 @@ public class Cliente {
     private BigDecimal saldo = BigDecimal.ZERO;
 
     @Builder.Default
+    @Column(name = "saldo_miga", precision = 14, scale = 2)
+    private BigDecimal saldoMiga = BigDecimal.ZERO;
+
+    @Builder.Default
+    @Column(name = "saldo_rallado", precision = 14, scale = 2)
+    private BigDecimal saldoRallado = BigDecimal.ZERO;
+
+    @Builder.Default
     @Column(nullable = false)
     private boolean activo = true;
 }

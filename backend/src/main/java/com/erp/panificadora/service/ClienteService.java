@@ -4,6 +4,7 @@ import com.erp.panificadora.dto.*;
 import com.erp.panificadora.exception.ResourceNotFoundException;
 import com.erp.panificadora.model.Cliente;
 import com.erp.panificadora.model.PagoCliente;
+import com.erp.panificadora.model.TipoCliente;
 import com.erp.panificadora.model.TipoPago;
 import com.erp.panificadora.model.VentaMiga;
 import com.erp.panificadora.model.VentaPanRallado;
@@ -34,7 +35,7 @@ public class ClienteService {
         Cliente cliente = Cliente.builder()
                 .nombre(dto.getNombre())
                 .apellido(dto.getApellido())
-                .tipo(dto.getTipo())
+                .tipo(TipoCliente.CLIENTE)
                 .direccion(dto.getDireccion())
                 .precioMiga(dto.getPrecioMiga())
                 .precioRallado(dto.getPrecioRallado())
@@ -47,7 +48,6 @@ public class ClienteService {
         Cliente cliente = findActivo(id);
         cliente.setNombre(dto.getNombre());
         cliente.setApellido(dto.getApellido());
-        cliente.setTipo(dto.getTipo());
         cliente.setDireccion(dto.getDireccion());
         cliente.setPrecioMiga(dto.getPrecioMiga());
         cliente.setPrecioRallado(dto.getPrecioRallado());
@@ -74,20 +74,21 @@ public class ClienteService {
 
     @Transactional(readOnly = true)
     public List<ClienteResponseDTO> listarDeudores() {
-        return clienteRepository.findByActivoTrueAndSaldoLessThan(BigDecimal.ZERO)
+        return clienteRepository.findDeudores()
                 .stream().map(this::toResponseDTO).collect(Collectors.toList());
     }
 
     @Transactional(readOnly = true)
     public List<ClienteResponseDTO> listarConSaldo() {
-        return clienteRepository.findByActivoTrueAndSaldoGreaterThan(BigDecimal.ZERO)
+        return clienteRepository.findConSaldo()
                 .stream().map(this::toResponseDTO).collect(Collectors.toList());
     }
 
     @Transactional
     public ClienteResponseDTO actualizarSaldo(Long id, SaldoUpdateDTO dto) {
         Cliente cliente = findActivo(id);
-        cliente.setSaldo(dto.getNuevoSaldo());
+        if (dto.getSaldoMiga() != null) cliente.setSaldoMiga(dto.getSaldoMiga());
+        if (dto.getSaldoRallado() != null) cliente.setSaldoRallado(dto.getSaldoRallado());
         return toResponseDTO(clienteRepository.save(cliente));
     }
 
@@ -151,7 +152,13 @@ public class ClienteService {
                 .tipoPago(dto.getTipoPago())
                 .build();
 
-        cliente.setSaldo(cliente.getSaldo().add(dto.getMonto()));
+        if (dto.getTipoPago() == TipoPago.MIGA) {
+            BigDecimal sm = cliente.getSaldoMiga() != null ? cliente.getSaldoMiga() : BigDecimal.ZERO;
+            cliente.setSaldoMiga(sm.add(dto.getMonto()));
+        } else {
+            BigDecimal sr = cliente.getSaldoRallado() != null ? cliente.getSaldoRallado() : BigDecimal.ZERO;
+            cliente.setSaldoRallado(sr.add(dto.getMonto()));
+        }
         clienteRepository.save(cliente);
 
         liquidarDeudaFIFO(clienteId, dto.getMonto(), dto.getTipoPago());
@@ -211,11 +218,11 @@ public class ClienteService {
                 .id(c.getId())
                 .nombre(c.getNombre())
                 .apellido(c.getApellido())
-                .tipo(c.getTipo().name())
                 .direccion(c.getDireccion())
                 .precioMiga(c.getPrecioMiga())
                 .precioRallado(c.getPrecioRallado())
-                .saldo(c.getSaldo())
+                .saldoMiga(c.getSaldoMiga() != null ? c.getSaldoMiga() : BigDecimal.ZERO)
+                .saldoRallado(c.getSaldoRallado() != null ? c.getSaldoRallado() : BigDecimal.ZERO)
                 .build();
     }
 
@@ -227,9 +234,7 @@ public class ClienteService {
                 .fecha(v.getFecha())
                 .clienteId(v.getCliente().getId())
                 .clienteNombre(v.getCliente().getNombre() + " " + v.getCliente().getApellido())
-                .tipoPan(v.getTipoPan().name())
                 .cantidad(v.getCantidad())
-                .unidad(v.getUnidad().name())
                 .precioUnitario(v.getPrecioUnitario())
                 .total(v.getTotal())
                 .pagado(v.isPagado())

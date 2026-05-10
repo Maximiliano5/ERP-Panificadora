@@ -25,6 +25,18 @@ public class VentaRalladoController {
         return ResponseEntity.status(HttpStatus.CREATED).body(ventaRalladoService.registrar(dto));
     }
 
+    @PutMapping("/{id}")
+    public ResponseEntity<VentaRalladoResponseDTO> actualizar(@PathVariable Long id,
+                                                              @Valid @RequestBody VentaRalladoRequestDTO dto) {
+        return ResponseEntity.ok(ventaRalladoService.actualizar(id, dto));
+    }
+
+    @DeleteMapping("/{id}")
+    public ResponseEntity<Void> eliminar(@PathVariable Long id) {
+        ventaRalladoService.eliminar(id);
+        return ResponseEntity.noContent().build();
+    }
+
     @GetMapping
     public ResponseEntity<List<VentaRalladoResponseDTO>> listar() {
         return ResponseEntity.ok(ventaRalladoService.listar());

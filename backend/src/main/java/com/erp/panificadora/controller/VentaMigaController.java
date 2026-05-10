@@ -25,6 +25,18 @@ public class VentaMigaController {
         return ResponseEntity.status(HttpStatus.CREATED).body(ventaMigaService.registrar(dto));
     }
 
+    @PutMapping("/{id}")
+    public ResponseEntity<VentaMigaResponseDTO> actualizar(@PathVariable Long id,
+                                                           @Valid @RequestBody VentaMigaRequestDTO dto) {
+        return ResponseEntity.ok(ventaMigaService.actualizar(id, dto));
+    }
+
+    @DeleteMapping("/{id}")
+    public ResponseEntity<Void> eliminar(@PathVariable Long id) {
+        ventaMigaService.eliminar(id);
+        return ResponseEntity.noContent().build();
+    }
+
     @GetMapping
     public ResponseEntity<List<VentaMigaResponseDTO>> listar() {
         return ResponseEntity.ok(ventaMigaService.listar());

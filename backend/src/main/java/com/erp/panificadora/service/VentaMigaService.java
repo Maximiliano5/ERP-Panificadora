@@ -4,6 +4,8 @@ import com.erp.panificadora.dto.VentaMigaRequestDTO;
 import com.erp.panificadora.dto.VentaMigaResponseDTO;
 import com.erp.panificadora.exception.ResourceNotFoundException;
 import com.erp.panificadora.model.Cliente;
+import com.erp.panificadora.model.TipoPan;
+import com.erp.panificadora.model.UnidadMiga;
 import com.erp.panificadora.model.VentaMiga;
 import com.erp.panificadora.repository.ClienteRepository;
 import com.erp.panificadora.repository.VentaMigaRepository;
@@ -34,9 +36,9 @@ public class VentaMigaService {
         VentaMiga venta = VentaMiga.builder()
                 .fecha(dto.getFecha() != null ? dto.getFecha() : LocalDate.now())
                 .cliente(cliente)
-                .tipoPan(dto.getTipoPan())
+                .tipoPan(TipoPan.BLANCO)
                 .cantidad(dto.getCantidad())
-                .unidad(dto.getUnidad())
+                .unidad(UnidadMiga.ENTERO)
                 .precioUnitario(dto.getPrecioUnitario())
                 .total(total)
                 .pagado(dto.getPagado())
@@ -44,11 +46,61 @@ public class VentaMigaService {
                 .build();
 
         if (!dto.getPagado()) {
-            cliente.setSaldo(cliente.getSaldo().subtract(total));
+            BigDecimal sm = cliente.getSaldoMiga() != null ? cliente.getSaldoMiga() : BigDecimal.ZERO;
+            cliente.setSaldoMiga(sm.subtract(total));
             clienteRepository.save(cliente);
         }
 
         return toResponseDTO(ventaMigaRepository.save(venta));
+    }
+
+    @Transactional
+    public VentaMigaResponseDTO actualizar(Long id, VentaMigaRequestDTO dto) {
+        VentaMiga venta = findById(id);
+        Cliente cliente = venta.getCliente();
+
+        // Revertir efecto anterior en saldoMiga
+        if (!venta.isPagado()) {
+            BigDecimal mp = venta.getMontoPagado() != null ? venta.getMontoPagado() : BigDecimal.ZERO;
+            BigDecimal deudaPendiente = venta.getTotal().subtract(mp);
+            BigDecimal sm = cliente.getSaldoMiga() != null ? cliente.getSaldoMiga() : BigDecimal.ZERO;
+            cliente.setSaldoMiga(sm.add(deudaPendiente));
+        }
+
+        // Calcular nuevo total
+        BigDecimal nuevoTotal = dto.getCantidad().multiply(dto.getPrecioUnitario());
+
+        // Aplicar nuevo efecto en saldoMiga
+        if (!dto.getPagado()) {
+            BigDecimal sm = cliente.getSaldoMiga() != null ? cliente.getSaldoMiga() : BigDecimal.ZERO;
+            cliente.setSaldoMiga(sm.subtract(nuevoTotal));
+        }
+        clienteRepository.save(cliente);
+
+        venta.setFecha(dto.getFecha() != null ? dto.getFecha() : venta.getFecha());
+        venta.setCantidad(dto.getCantidad());
+        venta.setPrecioUnitario(dto.getPrecioUnitario());
+        venta.setTotal(nuevoTotal);
+        venta.setPagado(dto.getPagado());
+        venta.setMontoPagado(dto.getPagado() ? nuevoTotal : BigDecimal.ZERO);
+
+        return toResponseDTO(ventaMigaRepository.save(venta));
+    }
+
+    @Transactional
+    public void eliminar(Long id) {
+        VentaMiga venta = findById(id);
+        Cliente cliente = venta.getCliente();
+
+        if (!venta.isPagado()) {
+            BigDecimal mp = venta.getMontoPagado() != null ? venta.getMontoPagado() : BigDecimal.ZERO;
+            BigDecimal deudaPendiente = venta.getTotal().subtract(mp);
+            BigDecimal sm = cliente.getSaldoMiga() != null ? cliente.getSaldoMiga() : BigDecimal.ZERO;
+            cliente.setSaldoMiga(sm.add(deudaPendiente));
+            clienteRepository.save(cliente);
+        }
+
+        ventaMigaRepository.delete(venta);
     }
 
     @Transactional(readOnly = true)
@@ -91,9 +143,7 @@ public class VentaMigaService {
                 .fecha(v.getFecha())
                 .clienteId(v.getCliente().getId())
                 .clienteNombre(v.getCliente().getNombre() + " " + v.getCliente().getApellido())
-                .tipoPan(v.getTipoPan().name())
                 .cantidad(v.getCantidad())
-                .unidad(v.getUnidad().name())
                 .precioUnitario(v.getPrecioUnitario())
                 .total(v.getTotal())
                 .pagado(v.isPagado())

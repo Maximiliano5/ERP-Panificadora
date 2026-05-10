@@ -11,8 +11,8 @@ export const clienteService = {
   crear: (data) => api.post(BASE, data).then((r) => r.data),
   actualizar: (id, data) => api.put(`${BASE}/${id}`, data).then((r) => r.data),
   eliminar: (id) => api.delete(`${BASE}/${id}`),
-  actualizarSaldo: (id, nuevoSaldo) =>
-    api.post(`${BASE}/${id}/saldo`, { nuevoSaldo }).then((r) => r.data),
+  actualizarSaldo: (id, data) =>
+    api.post(`${BASE}/${id}/saldo`, data).then((r) => r.data),
   registrarPago: (id, data) => api.post(`${BASE}/${id}/pagos`, data).then((r) => r.data),
   listarPagos: (id) => api.get(`${BASE}/${id}/pagos`).then((r) => r.data),
   obtenerPerfil: (id, desde, hasta) => {

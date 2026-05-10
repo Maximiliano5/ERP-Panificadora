@@ -1,9 +1,7 @@
 package com.erp.panificadora.dto;
 
-import com.erp.panificadora.model.TipoCliente;
 import jakarta.validation.constraints.DecimalMin;
 import jakarta.validation.constraints.NotBlank;
-import jakarta.validation.constraints.NotNull;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -22,9 +20,6 @@ public class ClienteRequestDTO {
 
     @NotBlank(message = "El apellido es obligatorio")
     private String apellido;
-
-    @NotNull(message = "El tipo es obligatorio")
-    private TipoCliente tipo;
 
     private String direccion;
 

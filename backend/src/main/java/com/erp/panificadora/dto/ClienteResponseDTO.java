@@ -18,9 +18,9 @@ public class ClienteResponseDTO {
     private Long id;
     private String nombre;
     private String apellido;
-    private String tipo;
     private String direccion;
     private BigDecimal precioMiga;
     private BigDecimal precioRallado;
-    private BigDecimal saldo;
+    private BigDecimal saldoMiga;
+    private BigDecimal saldoRallado;
 }

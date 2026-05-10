@@ -1,6 +1,5 @@
 package com.erp.panificadora.dto;
 
-import jakarta.validation.constraints.NotNull;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -14,6 +13,6 @@ import java.math.BigDecimal;
 @AllArgsConstructor
 public class SaldoUpdateDTO {
 
-    @NotNull(message = "El nuevo saldo es obligatorio")
-    private BigDecimal nuevoSaldo;
+    private BigDecimal saldoMiga;
+    private BigDecimal saldoRallado;
 }

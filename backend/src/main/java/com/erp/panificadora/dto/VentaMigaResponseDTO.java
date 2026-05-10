@@ -20,9 +20,7 @@ public class VentaMigaResponseDTO {
     private LocalDate fecha;
     private Long clienteId;
     private String clienteNombre;
-    private String tipoPan;
     private BigDecimal cantidad;
-    private String unidad;
     private BigDecimal precioUnitario;
     private BigDecimal total;
     private boolean pagado;
