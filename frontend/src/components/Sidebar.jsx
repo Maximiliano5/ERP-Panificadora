@@ -12,6 +12,7 @@ import {
   Calculate as CalculateIcon,
   PeopleAlt as ClientesIcon,
   PointOfSale as VentasIcon,
+  Grain as StockRalladoIcon,
 } from '@mui/icons-material';
 import { useNavigate, useLocation } from 'react-router-dom';
 import logo from '../assets/LogoRomaNegro.png';
@@ -28,6 +29,7 @@ const navItems = [
   { label: 'Costos', path: '/costos-produccion', icon: <CalculateIcon /> },
   { label: 'Clientes', path: '/clientes', icon: <ClientesIcon /> },
   { label: 'Ventas', path: '/ventas', icon: <VentasIcon /> },
+  { label: 'Stock Rallado', path: '/stock-rallado', icon: <StockRalladoIcon /> },
 ];
 
 export default function Sidebar() {

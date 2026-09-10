@@ -7,12 +7,17 @@ import {
   Inventory2 as InventoryIcon,
   SwapVert as MovimientosIcon,
   TrendingUp as TrendingIcon,
+  Grain as RalladoIcon,
 } from '@mui/icons-material';
 import { useNavigate } from 'react-router-dom';
 import { mercaderiaService } from '../services/mercaderiaService';
 import { movimientoService } from '../services/movimientoService';
+import { stockRalladoService } from '../services/stockRalladoService';
 import ValorStockCard from '../components/ValorStockCard';
 import MovimientoList from '../components/MovimientoList';
+
+const formatKg = (n) =>
+  n != null ? `${Number(n).toLocaleString('es-AR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} kg` : '-';
 
 function StatCard({ icon, label, value, color, onClick }) {
   return (
@@ -47,15 +52,18 @@ export default function Dashboard() {
   const navigate = useNavigate();
   const [valorData, setValorData] = useState(null);
   const [movimientos, setMovimientos] = useState([]);
+  const [stockRallado, setStockRallado] = useState(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     Promise.all([
       mercaderiaService.valorTotal(),
       movimientoService.listar(),
-    ]).then(([valor, movs]) => {
+      stockRalladoService.obtenerActual(),
+    ]).then(([valor, movs, stockRal]) => {
       setValorData(valor);
       setMovimientos(movs);
+      setStockRallado(stockRal.stockActualKg);
     }).finally(() => setLoading(false));
   }, []);
 
@@ -72,10 +80,10 @@ export default function Dashboard() {
       </Typography>
 
       <Grid container spacing={3} sx={{ mb: 4 }}>
-        <Grid item xs={12} md={4}>
+        <Grid item xs={12} md={3}>
           <ValorStockCard valorTotal={valorData?.valorTotal} loading={loading} />
         </Grid>
-        <Grid item xs={12} sm={6} md={4}>
+        <Grid item xs={12} sm={6} md={3}>
           <StatCard
             icon={<InventoryIcon />}
             label="Tipos de mercadería"
@@ -84,13 +92,22 @@ export default function Dashboard() {
             onClick={() => navigate('/mercaderias')}
           />
         </Grid>
-        <Grid item xs={12} sm={6} md={4}>
+        <Grid item xs={12} sm={6} md={3}>
           <StatCard
             icon={<TrendingIcon />}
             label="Movimientos registrados"
             value={loading ? null : movimientos.length}
             color="secondary"
             onClick={() => navigate('/movimientos')}
+          />
+        </Grid>
+        <Grid item xs={12} sm={6} md={3}>
+          <StatCard
+            icon={<RalladoIcon />}
+            label="Stock de pan rallado"
+            value={loading ? null : formatKg(stockRallado)}
+            color="warning"
+            onClick={() => navigate('/stock-rallado')}
           />
         </Grid>
       </Grid>

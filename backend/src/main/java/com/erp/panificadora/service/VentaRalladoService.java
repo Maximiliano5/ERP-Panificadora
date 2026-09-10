@@ -26,6 +26,7 @@ public class VentaRalladoService {
     private final VentaRalladoRepository ventaRalladoRepository;
     private final ClienteRepository clienteRepository;
     private final PagoClienteRepository pagoClienteRepository;
+    private final StockRalladoService stockRalladoService;
 
     @Transactional
     public VentaRalladoResponseDTO registrar(VentaRalladoRequestDTO dto) {
@@ -61,7 +62,10 @@ public class VentaRalladoService {
             clienteRepository.save(cliente);
         }
 
-        return toResponseDTO(ventaRalladoRepository.save(venta));
+        VentaPanRallado guardada = ventaRalladoRepository.save(venta);
+        stockRalladoService.registrarEgresoPorVenta(guardada.getId(), guardada.getPeso(), fecha);
+
+        return toResponseDTO(guardada);
     }
 
     @Transactional
@@ -92,7 +96,10 @@ public class VentaRalladoService {
         venta.setPagado(dto.getPagado());
         venta.setMontoPagado(dto.getPagado() ? nuevoTotal : BigDecimal.ZERO);
 
-        return toResponseDTO(ventaRalladoRepository.save(venta));
+        VentaPanRallado guardada = ventaRalladoRepository.save(venta);
+        stockRalladoService.actualizarEgresoPorVenta(guardada.getId(), guardada.getPeso(), guardada.getFecha());
+
+        return toResponseDTO(guardada);
     }
 
     @Transactional
@@ -108,6 +115,7 @@ public class VentaRalladoService {
             clienteRepository.save(cliente);
         }
 
+        stockRalladoService.eliminarEgresoPorVenta(id);
         ventaRalladoRepository.delete(venta);
     }
 
