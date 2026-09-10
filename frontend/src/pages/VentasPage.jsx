@@ -143,7 +143,7 @@ export default function VentasPage() {
   };
 
   const openEditMiga = (v) =>
-    setEditMiga({ id: v.id, fecha: v.fecha, cantidad: String(v.cantidad), precioUnitario: String(v.precioUnitario), pagado: v.pagado });
+    setEditMiga({ id: v.id, clienteId: v.clienteId, fecha: v.fecha, cantidad: String(v.cantidad), precioUnitario: String(v.precioUnitario), pagado: v.pagado });
 
   const handleSaveEditMiga = async () => {
     if (!editMiga.cantidad || !editMiga.precioUnitario) {
@@ -154,6 +154,7 @@ export default function VentasPage() {
     try {
       await ventaMigaService.actualizar(editMiga.id, {
         fecha: editMiga.fecha || null,
+        clienteId: editMiga.clienteId,
         cantidad: parseFloat(editMiga.cantidad),
         precioUnitario: parseFloat(editMiga.precioUnitario),
         pagado: editMiga.pagado,
@@ -180,7 +181,7 @@ export default function VentasPage() {
   };
 
   const openEditRallado = (v) =>
-    setEditRallado({ id: v.id, fecha: v.fecha, peso: String(v.peso), precioPorKg: String(v.precioPorKg), pagado: v.pagado });
+    setEditRallado({ id: v.id, clienteId: v.clienteId, fecha: v.fecha, peso: String(v.peso), precioPorKg: String(v.precioPorKg), pagado: v.pagado });
 
   const handleSaveEditRallado = async () => {
     if (!editRallado.peso || !editRallado.precioPorKg) {
@@ -191,6 +192,7 @@ export default function VentasPage() {
     try {
       await ventaRalladoService.actualizar(editRallado.id, {
         fecha: editRallado.fecha || null,
+        clienteId: editRallado.clienteId,
         peso: parseFloat(editRallado.peso),
         precioPorKg: parseFloat(editRallado.precioPorKg),
         pagado: editRallado.pagado,
