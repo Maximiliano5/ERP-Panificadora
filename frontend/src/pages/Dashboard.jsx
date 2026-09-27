@@ -9,6 +9,7 @@ import {
   Grain as RalladoIcon,
   AttachMoney as FacturadoIcon,
   ReportProblem as DeudaIcon,
+  EmojiEvents as RankingIcon,
   BakeryDining as MigaIcon,
 } from '@mui/icons-material';
 import {
@@ -23,7 +24,7 @@ import { clienteService } from '../services/clienteService';
 import ValorStockCard from '../components/ValorStockCard';
 
 const MESES = ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic'];
-const ANIO_GRAFICO = 2026;
+const ANIO_GRAFICO = new Date().getFullYear();
 
 const toISO = (d) => {
   const y = d.getFullYear();
@@ -140,6 +141,21 @@ export default function Dashboard({ linea = 'rallado' }) {
     });
     return MESES.map((mes, i) => ({ mes, cantidad: Number(totales[i].toFixed(2)) }));
   }, [ventas, esMiga]);
+
+  const rankingClientesAnio = useMemo(() => {
+    if (esMiga) return [];
+    const porCliente = new Map();
+    ventas.forEach((v) => {
+      if (Number(v.fecha.split('-')[0]) !== ANIO_GRAFICO) return;
+      const actual = porCliente.get(v.clienteId) ?? { clienteId: v.clienteId, nombre: v.clienteNombre, kg: 0, facturado: 0 };
+      actual.kg += Number(v.peso);
+      actual.facturado += Number(v.total);
+      porCliente.set(v.clienteId, actual);
+    });
+    return [...porCliente.values()].sort((a, b) => b.kg - a.kg);
+  }, [ventas, esMiga]);
+
+  const totalKgAnio = rankingClientesAnio.reduce((s, c) => s + c.kg, 0);
 
   const deudoresConMonto = useMemo(() => {
     return deudores
@@ -262,6 +278,54 @@ export default function Dashboard({ linea = 'rallado' }) {
           )}
         </CardContent>
       </Card>
+
+      {!esMiga && (
+        <Card sx={{ mb: 4 }}>
+          <CardContent>
+            <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 2 }}>
+              <Typography variant="h6" fontWeight={600}>
+                <RankingIcon sx={{ verticalAlign: 'middle', mr: 1, color: 'warning.main' }} />
+                Ranking de clientes — {ANIO_GRAFICO}
+              </Typography>
+              <Typography variant="body2" fontWeight={700} color="text.secondary">
+                Total: {formatKg(totalKgAnio)}
+              </Typography>
+            </Box>
+            {loading ? (
+              <Box sx={{ display: 'flex', justifyContent: 'center', py: 4 }}><CircularProgress /></Box>
+            ) : rankingClientesAnio.length === 0 ? (
+              <Typography color="text.secondary">No hay ventas de pan rallado en {ANIO_GRAFICO}.</Typography>
+            ) : (
+              <TableContainer>
+                <Table size="small">
+                  <TableHead>
+                    <TableRow sx={{ bgcolor: 'grey.50' }}>
+                      <TableCell sx={{ fontWeight: 700, width: 48 }}>#</TableCell>
+                      <TableCell sx={{ fontWeight: 700 }}>Cliente</TableCell>
+                      <TableCell align="right" sx={{ fontWeight: 700 }}>Kg comprados</TableCell>
+                      <TableCell align="right" sx={{ fontWeight: 700 }}>% del total</TableCell>
+                      <TableCell align="right" sx={{ fontWeight: 700 }}>Facturado</TableCell>
+                    </TableRow>
+                  </TableHead>
+                  <TableBody>
+                    {rankingClientesAnio.map((c, i) => (
+                      <TableRow key={c.clienteId} hover sx={{ cursor: 'pointer' }} onClick={() => navigate(`/${linea}/clientes/${c.clienteId}`)}>
+                        <TableCell sx={{ fontWeight: 700 }}>{i + 1}</TableCell>
+                        <TableCell>{c.nombre}</TableCell>
+                        <TableCell align="right" sx={{ fontWeight: 700 }}>{formatKg(c.kg)}</TableCell>
+                        <TableCell align="right">
+                          {totalKgAnio > 0 ? `${((c.kg / totalKgAnio) * 100).toLocaleString('es-AR', { maximumFractionDigits: 1 })}%` : '-'}
+                        </TableCell>
+                        <TableCell align="right">{formatPeso(c.facturado)}</TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </TableContainer>
+            )}
+          </CardContent>
+        </Card>
+      )}
 
       <Card>
         <CardContent>
