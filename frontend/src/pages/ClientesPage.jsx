@@ -38,9 +38,11 @@ const SaldoCell = ({ valor, label }) => {
   );
 };
 
-export default function ClientesPage() {
+export default function ClientesPage({ linea = 'rallado' }) {
   const { enqueueSnackbar } = useSnackbar();
   const navigate = useNavigate();
+  const esMiga = linea === 'miga';
+  const saldoDe = (c) => Number((esMiga ? c.saldoMiga : c.saldoRallado) || 0);
   const [clientes, setClientes] = useState([]);
   const [resumen, setResumen] = useState(null);
   const [loading, setLoading] = useState(false);
@@ -77,16 +79,19 @@ export default function ClientesPage() {
     fetchClientes();
   }, [fetchClientes]);
 
+  // Saldos y conteos sólo de la línea seleccionada (miga o rallado)
   const clientesFiltrados = clientes.filter((c) => {
-    const sm = Number(c.saldoMiga || 0);
-    const sr = Number(c.saldoRallado || 0);
-    if (tab === 1) return sm < 0 || sr < 0;
-    if (tab === 2) return sm > 0 || sr > 0;
+    if (tab === 1) return saldoDe(c) < 0;
+    if (tab === 2) return saldoDe(c) > 0;
     return true;
   });
 
-  const deudoresCount = clientes.filter((c) => Number(c.saldoMiga || 0) < 0 || Number(c.saldoRallado || 0) < 0).length;
-  const conSaldoCount = clientes.filter((c) => Number(c.saldoMiga || 0) > 0 || Number(c.saldoRallado || 0) > 0).length;
+  const deudores = clientes.filter((c) => saldoDe(c) < 0);
+  const conSaldo = clientes.filter((c) => saldoDe(c) > 0);
+  const deudoresCount = deudores.length;
+  const conSaldoCount = conSaldo.length;
+  const totalDeudaLinea = deudores.reduce((s, c) => s - saldoDe(c), 0);
+  const totalSaldoFavorLinea = conSaldo.reduce((s, c) => s + saldoDe(c), 0);
 
   const openCreate = () => {
     setEditTarget(null);
@@ -177,7 +182,7 @@ export default function ClientesPage() {
         <Box>
           <Typography variant="h4" fontWeight={700} color="primary">Clientes</Typography>
           <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5 }}>
-            Gestión de clientes y estado de cuenta
+            Gestión de clientes y estado de cuenta — {esMiga ? 'Pan de Miga' : 'Pan Rallado'}
           </Typography>
         </Box>
         <Button variant="contained" startIcon={<AddIcon />} onClick={openCreate}>
@@ -202,10 +207,10 @@ export default function ClientesPage() {
               <DeudaIcon color="error" />
               <Box>
                 <Typography variant="caption" color="text.secondary">
-                  Deuda total ({resumen.cantidadDeudores} deudores)
+                  Deuda {esMiga ? 'miga' : 'rallado'} ({deudoresCount} deudores)
                 </Typography>
                 <Typography variant="h6" fontWeight={700} color="error.main">
-                  {formatPeso(resumen.totalDeuda)}
+                  {formatPeso(totalDeudaLinea)}
                 </Typography>
               </Box>
             </Paper>
@@ -215,10 +220,10 @@ export default function ClientesPage() {
               <SaldoFavorIcon color="success" />
               <Box>
                 <Typography variant="caption" color="text.secondary">
-                  Saldo a favor ({resumen.cantidadConSaldo} clientes)
+                  Saldo a favor {esMiga ? 'miga' : 'rallado'} ({conSaldoCount} clientes)
                 </Typography>
                 <Typography variant="h6" fontWeight={700} color="success.main">
-                  {formatPeso(resumen.totalSaldoAFavor)}
+                  {formatPeso(totalSaldoFavorLinea)}
                 </Typography>
               </Box>
             </Paper>
@@ -243,8 +248,7 @@ export default function ClientesPage() {
               <TableHead>
                 <TableRow sx={{ bgcolor: 'grey.50' }}>
                   <TableCell sx={{ fontWeight: 700 }}>Nombre</TableCell>
-                  <TableCell sx={{ fontWeight: 700 }}>Saldo Miga</TableCell>
-                  <TableCell sx={{ fontWeight: 700 }}>Saldo Rallado</TableCell>
+                  <TableCell sx={{ fontWeight: 700 }}>Saldo {esMiga ? 'Miga' : 'Rallado'}</TableCell>
                   <TableCell align="right" sx={{ fontWeight: 700 }}>Acciones</TableCell>
                 </TableRow>
               </TableHead>
@@ -253,17 +257,20 @@ export default function ClientesPage() {
                   <TableRow key={c.id} hover>
                     <TableCell
                       sx={{ cursor: 'pointer', '&:hover': { textDecoration: 'underline', color: 'primary.main' } }}
-                      onClick={() => navigate(`/clientes/${c.id}`)}
+                      onClick={() => navigate(`/${linea}/clientes/${c.id}`)}
                     >
                       {c.nombre} {c.apellido}
                     </TableCell>
-                    <TableCell><SaldoCell valor={c.saldoMiga} label="Miga" /></TableCell>
-                    <TableCell><SaldoCell valor={c.saldoRallado} label="Rallado" /></TableCell>
+                    <TableCell>
+                      {esMiga
+                        ? <SaldoCell valor={c.saldoMiga} label="Miga" />
+                        : <SaldoCell valor={c.saldoRallado} label="Rallado" />}
+                    </TableCell>
                     <TableCell align="right">
                       <IconButton size="small" title="Ajustar saldo" onClick={() => openSaldo(c)} color="primary">
                         <SaldoIcon fontSize="small" />
                       </IconButton>
-                      <IconButton size="small" title="Ver perfil" onClick={() => navigate(`/clientes/${c.id}`)}>
+                      <IconButton size="small" title="Ver perfil" onClick={() => navigate(`/${linea}/clientes/${c.id}`)}>
                         <PerfilIcon fontSize="small" />
                       </IconButton>
                       <IconButton size="small" title="Editar" onClick={() => openEdit(c)}>
@@ -300,6 +307,7 @@ export default function ClientesPage() {
             onChange={(e) => setForm({ ...form, direccion: e.target.value })}
             size="small" fullWidth
           />
+          {esMiga && (
           <TextField
             label="Precio fijo miga (opcional)" type="number"
             value={form.precioMiga}
@@ -308,6 +316,8 @@ export default function ClientesPage() {
             InputProps={{ startAdornment: <InputAdornment position="start">$</InputAdornment> }}
             inputProps={{ min: 0.01, step: 0.01 }}
           />
+          )}
+          {!esMiga && (
           <TextField
             label="Precio fijo rallado / kg (opcional)" type="number"
             value={form.precioRallado}
@@ -316,6 +326,7 @@ export default function ClientesPage() {
             InputProps={{ startAdornment: <InputAdornment position="start">$</InputAdornment> }}
             inputProps={{ min: 0.01, step: 0.01 }}
           />
+          )}
         </DialogContent>
         <DialogActions>
           <Button onClick={() => setDialogOpen(false)}>Cancelar</Button>
@@ -332,22 +343,25 @@ export default function ClientesPage() {
           <Typography variant="body2" color="text.secondary">
             Positivo = saldo a favor · Negativo = deuda
           </Typography>
-          <TextField
-            label="Saldo Miga" type="number"
-            value={nuevoSaldoMiga}
-            onChange={(e) => setNuevoSaldoMiga(e.target.value)}
-            size="small" fullWidth autoFocus
-            InputProps={{ startAdornment: <InputAdornment position="start">$</InputAdornment> }}
-            inputProps={{ step: 0.01 }}
-          />
-          <TextField
-            label="Saldo Rallado" type="number"
-            value={nuevoSaldoRallado}
-            onChange={(e) => setNuevoSaldoRallado(e.target.value)}
-            size="small" fullWidth
-            InputProps={{ startAdornment: <InputAdornment position="start">$</InputAdornment> }}
-            inputProps={{ step: 0.01 }}
-          />
+          {esMiga ? (
+            <TextField
+              label="Saldo Miga" type="number"
+              value={nuevoSaldoMiga}
+              onChange={(e) => setNuevoSaldoMiga(e.target.value)}
+              size="small" fullWidth autoFocus
+              InputProps={{ startAdornment: <InputAdornment position="start">$</InputAdornment> }}
+              inputProps={{ step: 0.01 }}
+            />
+          ) : (
+            <TextField
+              label="Saldo Rallado" type="number"
+              value={nuevoSaldoRallado}
+              onChange={(e) => setNuevoSaldoRallado(e.target.value)}
+              size="small" fullWidth autoFocus
+              InputProps={{ startAdornment: <InputAdornment position="start">$</InputAdornment> }}
+              inputProps={{ step: 0.01 }}
+            />
+          )}
         </DialogContent>
         <DialogActions>
           <Button onClick={() => setSaldoDialogOpen(false)}>Cancelar</Button>

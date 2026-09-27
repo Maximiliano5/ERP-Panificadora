@@ -9,6 +9,7 @@ import {
   Grain as RalladoIcon,
   AttachMoney as FacturadoIcon,
   ReportProblem as DeudaIcon,
+  BakeryDining as MigaIcon,
 } from '@mui/icons-material';
 import {
   ResponsiveContainer, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip,
@@ -44,6 +45,9 @@ const startOfYear = (d) => new Date(d.getFullYear(), 0, 1);
 const formatKg = (n) =>
   n != null ? `${Number(n).toLocaleString('es-AR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} kg` : '-';
 
+const formatUnidades = (n) =>
+  n != null ? `${Number(n).toLocaleString('es-AR', { maximumFractionDigits: 2 })} u.` : '-';
+
 const formatPeso = (n) =>
   n != null
     ? `$${Number(n).toLocaleString('es-AR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
@@ -78,14 +82,14 @@ function StatCard({ icon, label, value, color, onClick }) {
   );
 }
 
-export default function Dashboard() {
+export default function Dashboard({ linea = 'rallado' }) {
   const theme = useTheme();
   const navigate = useNavigate();
+  const esMiga = linea === 'miga';
 
   const [valorData, setValorData] = useState(null);
   const [stockRallado, setStockRallado] = useState(null);
-  const [ventasRallado, setVentasRallado] = useState([]);
-  const [ventasMiga, setVentasMiga] = useState([]);
+  const [ventas, setVentas] = useState([]);
   const [deudores, setDeudores] = useState([]);
   const [loading, setLoading] = useState(true);
 
@@ -97,18 +101,16 @@ export default function Dashboard() {
   useEffect(() => {
     Promise.all([
       mercaderiaService.valorTotal(),
-      stockRalladoService.obtenerActual(),
-      ventaRalladoService.listar(),
-      ventaMigaService.listar(),
+      esMiga ? Promise.resolve(null) : stockRalladoService.obtenerActual(),
+      esMiga ? ventaMigaService.listar() : ventaRalladoService.listar(),
       clienteService.listarDeudores(),
-    ]).then(([valor, stockRal, vRallado, vMiga, deud]) => {
+    ]).then(([valor, stockRal, vts, deud]) => {
       setValorData(valor);
-      setStockRallado(stockRal.stockActualKg);
-      setVentasRallado(vRallado);
-      setVentasMiga(vMiga);
+      setStockRallado(stockRal?.stockActualKg ?? null);
+      setVentas(vts);
       setDeudores(deud);
     }).finally(() => setLoading(false));
-  }, []);
+  }, [esMiga]);
 
   const aplicarPreset = (p) => {
     setPreset(p);
@@ -118,49 +120,47 @@ export default function Dashboard() {
     setHasta(toISO(today));
   };
 
-  const kgVendidoPeriodo = useMemo(
-    () => ventasRallado
-      .filter((v) => v.fecha >= desde && v.fecha <= hasta)
-      .reduce((s, v) => s + Number(v.peso), 0),
-    [ventasRallado, desde, hasta]
+  // Miga se mide en unidades (cantidad); rallado en kg (peso)
+  const cantidadDe = (v) => Number(esMiga ? v.cantidad : v.peso);
+  const formatCantidad = esMiga ? formatUnidades : formatKg;
+
+  const ventasPeriodo = useMemo(
+    () => ventas.filter((v) => v.fecha >= desde && v.fecha <= hasta),
+    [ventas, desde, hasta]
   );
 
-  const facturadoPeriodo = useMemo(() => {
-    const rallado = ventasRallado.filter((v) => v.fecha >= desde && v.fecha <= hasta)
-      .reduce((s, v) => s + Number(v.total), 0);
-    const miga = ventasMiga.filter((v) => v.fecha >= desde && v.fecha <= hasta)
-      .reduce((s, v) => s + Number(v.total), 0);
-    return rallado + miga;
-  }, [ventasRallado, ventasMiga, desde, hasta]);
+  const cantidadVendidaPeriodo = ventasPeriodo.reduce((s, v) => s + cantidadDe(v), 0);
+  const facturadoPeriodo = ventasPeriodo.reduce((s, v) => s + Number(v.total), 0);
 
   const ventasPorMesAnio = useMemo(() => {
     const totales = Array(12).fill(0);
-    ventasRallado.forEach((v) => {
+    ventas.forEach((v) => {
       const [y, m] = v.fecha.split('-');
-      if (Number(y) === ANIO_GRAFICO) totales[Number(m) - 1] += Number(v.peso);
+      if (Number(y) === ANIO_GRAFICO) totales[Number(m) - 1] += Number(esMiga ? v.cantidad : v.peso);
     });
-    return MESES.map((mes, i) => ({ mes, kg: Number(totales[i].toFixed(2)) }));
-  }, [ventasRallado]);
+    return MESES.map((mes, i) => ({ mes, cantidad: Number(totales[i].toFixed(2)) }));
+  }, [ventas, esMiga]);
 
   const deudoresConMonto = useMemo(() => {
     return deudores
       .map((c) => {
-        const deudaMiga = c.saldoMiga < 0 ? -c.saldoMiga : 0;
-        const deudaRallado = c.saldoRallado < 0 ? -c.saldoRallado : 0;
-        return { ...c, deudaMiga, deudaRallado, deudaTotal: deudaMiga + deudaRallado };
+        const saldo = Number(esMiga ? c.saldoMiga : c.saldoRallado);
+        return { ...c, deuda: saldo < 0 ? -saldo : 0 };
       })
-      .sort((a, b) => b.deudaTotal - a.deudaTotal);
-  }, [deudores]);
+      .filter((c) => c.deuda > 0)
+      .sort((a, b) => b.deuda - a.deuda);
+  }, [deudores, esMiga]);
 
-  const totalDeuda = deudoresConMonto.reduce((s, c) => s + c.deudaTotal, 0);
+  const totalDeuda = deudoresConMonto.reduce((s, c) => s + c.deuda, 0);
+  const producto = esMiga ? 'pan de miga' : 'pan rallado';
 
   return (
     <Box sx={{ p: { xs: 2, md: 4 } }}>
       <Typography variant="h4" gutterBottom>
-        Dashboard
+        Dashboard — {esMiga ? 'Pan de Miga' : 'Pan Rallado'}
       </Typography>
       <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
-        Resumen general del stock de la panificadora
+        Resumen general de {producto}
       </Typography>
 
       <Paper sx={{ p: 2, mb: 3, display: 'flex', flexWrap: 'wrap', gap: 2, alignItems: 'center' }}>
@@ -197,21 +197,31 @@ export default function Dashboard() {
           <ValorStockCard valorTotal={valorData?.valorTotal} loading={loading} />
         </Grid>
         <Grid item xs={12} sm={6} md={3}>
-          <StatCard
-            icon={<RalladoIcon />}
-            label="Stock actual de pan rallado"
-            value={loading ? null : formatKg(stockRallado)}
-            color="warning"
-            onClick={() => navigate('/stock-rallado')}
-          />
+          {esMiga ? (
+            <StatCard
+              icon={<DeudaIcon />}
+              label="Deuda de clientes (miga)"
+              value={loading ? null : formatPeso(totalDeuda)}
+              color="error"
+              onClick={() => navigate('/miga/clientes')}
+            />
+          ) : (
+            <StatCard
+              icon={<RalladoIcon />}
+              label="Stock actual de pan rallado"
+              value={loading ? null : formatKg(stockRallado)}
+              color="warning"
+              onClick={() => navigate('/rallado/stock')}
+            />
+          )}
         </Grid>
         <Grid item xs={12} sm={6} md={3}>
           <StatCard
-            icon={<RalladoIcon />}
-            label="Pan rallado vendido (período)"
-            value={loading ? null : formatKg(kgVendidoPeriodo)}
+            icon={esMiga ? <MigaIcon /> : <RalladoIcon />}
+            label={`${esMiga ? 'Pan de miga' : 'Pan rallado'} vendido (período)`}
+            value={loading ? null : formatCantidad(cantidadVendidaPeriodo)}
             color="secondary"
-            onClick={() => navigate('/ventas')}
+            onClick={() => navigate(`/${linea}/ventas`)}
           />
         </Grid>
         <Grid item xs={12} sm={6} md={3}>
@@ -220,7 +230,7 @@ export default function Dashboard() {
             label="Facturado (período)"
             value={loading ? null : formatPeso(facturadoPeriodo)}
             color="primary"
-            onClick={() => navigate('/ventas')}
+            onClick={() => navigate(`/${linea}/ventas`)}
           />
         </Grid>
       </Grid>
@@ -228,10 +238,10 @@ export default function Dashboard() {
       <Card sx={{ mb: 4 }}>
         <CardContent>
           <Typography variant="h6" fontWeight={600} gutterBottom>
-            Ventas de pan rallado — {ANIO_GRAFICO}
+            Ventas de {producto} — {ANIO_GRAFICO}
           </Typography>
           <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
-            Kilogramos vendidos por mes
+            {esMiga ? 'Unidades vendidas por mes' : 'Kilogramos vendidos por mes'}
           </Typography>
           {loading ? (
             <Box sx={{ display: 'flex', justifyContent: 'center', py: 6 }}><CircularProgress /></Box>
@@ -242,11 +252,11 @@ export default function Dashboard() {
                 <XAxis dataKey="mes" tick={{ fontSize: 12 }} tickLine={false} axisLine={{ stroke: '#ccc' }} />
                 <YAxis tick={{ fontSize: 12 }} tickLine={false} axisLine={false} width={48} />
                 <Tooltip
-                  formatter={(value) => [formatKg(value), 'Vendido']}
+                  formatter={(value) => [formatCantidad(value), 'Vendido']}
                   labelFormatter={(label) => `${label} ${ANIO_GRAFICO}`}
                   contentStyle={{ borderRadius: 8, fontSize: 13 }}
                 />
-                <Bar dataKey="kg" fill={theme.palette.primary.main} radius={[4, 4, 0, 0]} maxBarSize={44} />
+                <Bar dataKey="cantidad" fill={theme.palette.primary.main} radius={[4, 4, 0, 0]} maxBarSize={44} />
               </BarChart>
             </ResponsiveContainer>
           )}
@@ -258,7 +268,7 @@ export default function Dashboard() {
           <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 2 }}>
             <Typography variant="h6" fontWeight={600}>
               <DeudaIcon sx={{ verticalAlign: 'middle', mr: 1, color: 'error.main' }} />
-              Clientes deudores
+              Clientes deudores ({esMiga ? 'miga' : 'rallado'})
             </Typography>
             <Typography variant="body2" fontWeight={700} color="error.main">
               Total: {formatPeso(totalDeuda)}
@@ -274,18 +284,14 @@ export default function Dashboard() {
                 <TableHead>
                   <TableRow sx={{ bgcolor: 'grey.50' }}>
                     <TableCell sx={{ fontWeight: 700 }}>Cliente</TableCell>
-                    <TableCell align="right" sx={{ fontWeight: 700 }}>Debe (miga)</TableCell>
-                    <TableCell align="right" sx={{ fontWeight: 700 }}>Debe (rallado)</TableCell>
-                    <TableCell align="right" sx={{ fontWeight: 700 }}>Total</TableCell>
+                    <TableCell align="right" sx={{ fontWeight: 700 }}>Debe</TableCell>
                   </TableRow>
                 </TableHead>
                 <TableBody>
                   {deudoresConMonto.map((c) => (
-                    <TableRow key={c.id} hover sx={{ cursor: 'pointer' }} onClick={() => navigate(`/clientes/${c.id}`)}>
+                    <TableRow key={c.id} hover sx={{ cursor: 'pointer' }} onClick={() => navigate(`/${linea}/clientes/${c.id}`)}>
                       <TableCell>{c.nombre} {c.apellido}</TableCell>
-                      <TableCell align="right">{c.deudaMiga > 0 ? formatPeso(c.deudaMiga) : '-'}</TableCell>
-                      <TableCell align="right">{c.deudaRallado > 0 ? formatPeso(c.deudaRallado) : '-'}</TableCell>
-                      <TableCell align="right" sx={{ fontWeight: 700, color: 'error.main' }}>{formatPeso(c.deudaTotal)}</TableCell>
+                      <TableCell align="right" sx={{ fontWeight: 700, color: 'error.main' }}>{formatPeso(c.deuda)}</TableCell>
                     </TableRow>
                   ))}
                 </TableBody>

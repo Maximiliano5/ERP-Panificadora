@@ -61,7 +61,7 @@ const firstOfMonth = () => {
 const EMPTY_PAGO_MIGA = { fecha: today(), monto: '', descripcion: '', tipoPago: 'MIGA' };
 const EMPTY_PAGO_RALLADO = { fecha: today(), monto: '', descripcion: '', tipoPago: 'RALLADO' };
 
-export default function ClientePerfilPage() {
+export default function ClientePerfilPage({ linea = 'rallado' }) {
   const { id } = useParams();
   const navigate = useNavigate();
   const { enqueueSnackbar } = useSnackbar();
@@ -149,7 +149,7 @@ export default function ClientePerfilPage() {
     <Container maxWidth="lg" sx={{ py: 4 }}>
       {/* Header */}
       <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mb: 3 }}>
-        <Button startIcon={<BackIcon />} onClick={() => navigate('/clientes')} variant="outlined" size="small">
+        <Button startIcon={<BackIcon />} onClick={() => navigate(`/${linea}/clientes`)} variant="outlined" size="small">
           Volver
         </Button>
         <Typography variant="h4" fontWeight={700} color="primary">
@@ -176,9 +176,10 @@ export default function ClientePerfilPage() {
       {/* Tabs */}
       <Paper>
         <Tabs value={tab} onChange={(_, v) => setTab(v)} sx={{ borderBottom: 1, borderColor: 'divider' }}>
-          <Tab label="Resumen" />
-          <Tab label="Pan de Miga" icon={<MigaIcon fontSize="small" />} iconPosition="start" />
-          <Tab label="Pan Rallado" icon={<RalladoIcon fontSize="small" />} iconPosition="start" />
+          <Tab label="Resumen" value={0} />
+          {linea === 'miga'
+            ? <Tab label="Pan de Miga" value={1} icon={<MigaIcon fontSize="small" />} iconPosition="start" />
+            : <Tab label="Pan Rallado" value={2} icon={<RalladoIcon fontSize="small" />} iconPosition="start" />}
         </Tabs>
 
         {/* ── TAB RESUMEN ── */}

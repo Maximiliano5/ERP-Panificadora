@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import {
   Box, List, ListItem, ListItemButton,
   ListItemIcon, ListItemText, Divider, IconButton, Tooltip, Typography,
+  Select, MenuItem,
 } from '@mui/material';
 import {
   ChevronLeft as CollapseIcon,
@@ -13,34 +14,61 @@ import {
   PeopleAlt as ClientesIcon,
   PointOfSale as VentasIcon,
   Grain as StockRalladoIcon,
+  BakeryDining as MigaIcon,
 } from '@mui/icons-material';
 import { useNavigate, useLocation } from 'react-router-dom';
 import logo from '../assets/LogoRomaNegro.png';
 import panIcon from '../assets/pan.png';
+import { useLinea, LINEAS } from '../hooks/useLinea';
 
 const EXPANDED_WIDTH = 220;
 const COLLAPSED_WIDTH = 64;
 
-const navItems = [
-  { label: 'Dashboard', path: '/dashboard', icon: <DashboardIcon /> },
-  { label: 'Mercaderías', path: '/mercaderias', icon: <InventoryIcon /> },
-  { label: 'Movimientos', path: '/movimientos', icon: <MovimientosIcon /> },
-  { label: 'Producción', path: '/produccion', icon: <img src={panIcon} alt="" style={{ width: 22, height: 22, objectFit: 'contain', filter: 'brightness(0) invert(1)' }} /> },
-  { label: 'Costos', path: '/costos-produccion', icon: <CalculateIcon /> },
-  { label: 'Clientes', path: '/clientes', icon: <ClientesIcon /> },
-  { label: 'Ventas', path: '/ventas', icon: <VentasIcon /> },
-  { label: 'Stock Rallado', path: '/stock-rallado', icon: <StockRalladoIcon /> },
-];
+const panImg = (
+  <img src={panIcon} alt="" style={{ width: 22, height: 22, objectFit: 'contain', filter: 'brightness(0) invert(1)' }} />
+);
+
+const navItemsPorLinea = {
+  rallado: [
+    { label: 'Dashboard', path: '/rallado/dashboard', icon: <DashboardIcon /> },
+    { label: 'Mercaderías', path: '/rallado/mercaderias', icon: <InventoryIcon /> },
+    { label: 'Movimientos', path: '/rallado/movimientos', icon: <MovimientosIcon /> },
+    { label: 'Clientes', path: '/rallado/clientes', icon: <ClientesIcon /> },
+    { label: 'Ventas', path: '/rallado/ventas', icon: <VentasIcon /> },
+    { label: 'Stock Rallado', path: '/rallado/stock', icon: <StockRalladoIcon /> },
+  ],
+  miga: [
+    { label: 'Dashboard', path: '/miga/dashboard', icon: <DashboardIcon /> },
+    { label: 'Mercaderías', path: '/miga/mercaderias', icon: <InventoryIcon /> },
+    { label: 'Movimientos', path: '/miga/movimientos', icon: <MovimientosIcon /> },
+    { label: 'Producción', path: '/miga/produccion', icon: panImg },
+    { label: 'Costos', path: '/miga/costos', icon: <CalculateIcon /> },
+    { label: 'Clientes', path: '/miga/clientes', icon: <ClientesIcon /> },
+    { label: 'Ventas', path: '/miga/ventas', icon: <VentasIcon /> },
+  ],
+};
+
+const lineaIcon = {
+  rallado: <StockRalladoIcon />,
+  miga: <MigaIcon />,
+};
 
 export default function Sidebar() {
   const [collapsed, setCollapsed] = useState(false);
   const navigate = useNavigate();
   const location = useLocation();
+  const { linea, base } = useLinea();
+  const navItems = navItemsPorLinea[linea];
+  const otraLinea = linea === 'rallado' ? 'miga' : 'rallado';
 
   const width = collapsed ? COLLAPSED_WIDTH : EXPANDED_WIDTH;
 
+  const cambiarLinea = (nueva) => {
+    if (nueva !== linea) navigate(`/${nueva}/dashboard`);
+  };
+
   const isActive = (path) =>
-    path === '/dashboard'
+    path.endsWith('/dashboard')
       ? location.pathname === path
       : location.pathname === path || location.pathname.startsWith(path + '/');
 
@@ -71,7 +99,7 @@ export default function Sidebar() {
       >
         {!collapsed && (
           <Box
-            onClick={() => navigate('/dashboard')}
+            onClick={() => navigate(`${base}/dashboard`)}
             sx={{ cursor: 'pointer', display: 'flex', alignItems: 'center' }}
           >
             <img
@@ -91,6 +119,51 @@ export default function Sidebar() {
       </Box>
 
       <Divider sx={{ borderColor: 'rgba(255,255,255,0.2)', mx: 1 }} />
+
+      {/* Selector de línea de producto */}
+      <Box sx={{ px: collapsed ? 0.5 : 1.5, pt: 1.5, pb: 0.5, display: 'flex', justifyContent: 'center' }}>
+        {collapsed ? (
+          <Tooltip
+            title={`${LINEAS[linea].label} (clic para cambiar a ${LINEAS[otraLinea].label})`}
+            placement="right"
+            arrow
+          >
+            <IconButton
+              onClick={() => cambiarLinea(otraLinea)}
+              sx={{ color: 'primary.main', bgcolor: 'white', '&:hover': { bgcolor: 'rgba(255,255,255,0.85)' } }}
+            >
+              {lineaIcon[linea]}
+            </IconButton>
+          </Tooltip>
+        ) : (
+          <Select
+            fullWidth
+            size="small"
+            value={linea}
+            onChange={(e) => cambiarLinea(e.target.value)}
+            renderValue={(v) => (
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                {lineaIcon[v]}
+                <Typography fontSize={14} fontWeight={700}>{LINEAS[v].label}</Typography>
+              </Box>
+            )}
+            sx={{
+              bgcolor: 'white',
+              color: 'primary.main',
+              borderRadius: 2,
+              '& .MuiSelect-icon': { color: 'primary.main' },
+              '& .MuiOutlinedInput-notchedOutline': { border: 'none' },
+            }}
+          >
+            {Object.values(LINEAS).map((l) => (
+              <MenuItem key={l.key} value={l.key}>
+                <ListItemIcon sx={{ minWidth: 34, color: 'primary.main' }}>{lineaIcon[l.key]}</ListItemIcon>
+                {l.label}
+              </MenuItem>
+            ))}
+          </Select>
+        )}
+      </Box>
 
       {/* Ítems de navegación */}
       <List sx={{ flex: 1, pt: 1, px: 0.5 }}>

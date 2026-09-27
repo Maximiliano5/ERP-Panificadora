@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import {
   Box, Button, Typography, Container, TextField,
-  Paper, Tabs, Tab, Grid, Divider, IconButton,
+  Paper, Grid, Divider, IconButton,
   Table, TableBody, TableCell, TableContainer, TableHead, TableRow,
   Chip, FormControl, InputLabel, Select, MenuItem, InputAdornment,
   CircularProgress, FormControlLabel, Switch, Dialog, DialogTitle,
@@ -9,8 +9,6 @@ import {
 } from '@mui/material';
 import {
   Add as AddIcon,
-  Receipt as ReceiptIcon,
-  Grain as RalladoIcon,
   Edit as EditIcon,
   Delete as DeleteIcon,
 } from '@mui/icons-material';
@@ -42,9 +40,10 @@ const EstadoPagoChip = ({ estadoPago }) => {
 const EMPTY_MIGA = { fecha: today(), clienteId: '', cantidad: '', precioUnitario: '', pagado: true };
 const EMPTY_RALLADO = { fecha: today(), clienteId: '', peso: '', precioPorKg: '', pagado: true };
 
-export default function VentasPage() {
+export default function VentasPage({ linea = 'rallado' }) {
   const { enqueueSnackbar } = useSnackbar();
-  const [tab, setTab] = useState(0);
+  // 0 = miga, 1 = rallado (la línea la define la sección elegida en el menú)
+  const tab = linea === 'miga' ? 0 : 1;
   const [clientes, setClientes] = useState([]);
 
   const [ventasMiga, setVentasMiga] = useState([]);
@@ -231,17 +230,15 @@ export default function VentasPage() {
   return (
     <Container maxWidth="lg" sx={{ py: 4 }}>
       <Box sx={{ mb: 3 }}>
-        <Typography variant="h4" fontWeight={700} color="primary">Ventas</Typography>
+        <Typography variant="h4" fontWeight={700} color="primary">
+          Ventas {tab === 0 ? 'de Pan de Miga' : 'de Pan Rallado'}
+        </Typography>
         <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5 }}>
-          Registro de ventas de pan de miga y pan rallado
+          Registro de ventas de {tab === 0 ? 'pan de miga' : 'pan rallado'}
         </Typography>
       </Box>
 
       <Paper>
-        <Tabs value={tab} onChange={(_, v) => setTab(v)} sx={{ borderBottom: 1, borderColor: 'divider' }}>
-          <Tab label="Pan de Miga" icon={<ReceiptIcon fontSize="small" />} iconPosition="start" />
-          <Tab label="Pan Rallado" icon={<RalladoIcon fontSize="small" />} iconPosition="start" />
-        </Tabs>
 
         {/* ── TAB MIGA ── */}
         {tab === 0 && (
